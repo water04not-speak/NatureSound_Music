@@ -1,0 +1,56 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "C:\\Users\\River\\.ohos\\config\\default_NatureSound_Music_sAHM0DJgLwyrU-fagughInasU-QZU1j_h6ZCN65Vbxs=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B3A672F718EFE16BFF4A596E092DCF1D4B21C12D33C05BF804A2872709D5A72358C4583AA62E0A1",
+          "profile": "C:\\Users\\River\\.ohos\\config\\default_NatureSound_Music_sAHM0DJgLwyrU-fagughInasU-QZU1j_h6ZCN65Vbxs=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:\\Users\\River\\.ohos\\config\\default_NatureSound_Music_sAHM0DJgLwyrU-fagughInasU-QZU1j_h6ZCN65Vbxs=.p12",
+          "storePassword": "0000001B428EB5470EED6501CF5522632FAAFCAE5FD6B2F8F7FC0B9850EA23E4482A053E068FE91B2DB047"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "targetSdkVersion": "5.0.5(17)",
+        "compatibleSdkVersion": "5.0.5(17)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug",
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}

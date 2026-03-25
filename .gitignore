@@ -1,0 +1,32 @@
+# 鸿蒙构建缓存
+.hvigor/
+oh_modules/
+
+# IDE配置
+.idea/
+
+# 本地环境配置
+local.properties
+
+# 签名密钥（敏感信息！）
+*.csr
+*.p12
+*.key
+*.keystore
+
+# 文档和备份
+其他相关文档/
+*.md
+*.txt
+!README.md
+
+# 压缩包
+*.zip
+*.rar
+*.tar
+*.gz
+
+# 系统缓存
+.DS_Store
+*.iml
+*.log

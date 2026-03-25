@@ -1,0 +1,124 @@
+{
+  "routerMap": [
+    {
+      "name": "Start",
+      "pageSourceFile": "src/main/ets/pages/Start.ets",
+      "buildFunction": "StartBuilder",
+      "data": {
+        "description": "this is Start"
+      }
+    },
+    {
+      "name": "Layout",
+      "pageSourceFile": "src/main/ets/pages/Layout.ets",
+      "buildFunction": "LayoutBuilder",
+      "data": {
+        "description": "this is Layout"
+      }
+    },
+    {
+      "name": "Play",
+      "pageSourceFile": "src/main/ets/pages/Play.ets",
+      "buildFunction": "PlayBuilder",
+      "data": {
+        "description": "this is Play"
+      }
+    },
+    {
+      "name": "Register",
+      "pageSourceFile": "src/main/ets/pages/Register.ets",
+      "buildFunction": "RegisterBuilder",
+      "data": {
+        "description": "this is Register"
+      }
+    },
+    {
+      "name": "MusicFeast",
+      "pageSourceFile": "src/main/ets/pages/MusicFeast.ets",
+      "buildFunction": "MusicFeastBuilder",
+      "data": {
+        "description": "this is MusicFeast"
+      }
+    },
+    {
+      "name": "Login",
+      "pageSourceFile": "src/main/ets/pages/Login.ets",
+      "buildFunction": "LoginBuilder",
+      "data": {
+        "description": "this is Login"
+      }
+    },
+    {
+      "name": "PlaylistDetail",
+      "pageSourceFile": "src/main/ets/pages/PlaylistDetail.ets",
+      "buildFunction": "PlaylistDetailBuilder",
+      "data": {
+        "description": "this is PlaylistDetail"
+      }
+    },
+    {
+      "name": "PhoneLogin",
+      "pageSourceFile": "src/main/ets/pages/PhoneLogin.ets",
+      "buildFunction": "PhoneLoginBuilder",
+      "data": {
+        "description": "this is PhoneLogin"
+      }
+    },
+    {
+      "name": "Terms",
+      "pageSourceFile": "src/main/ets/pages/Terms.ets",
+      "buildFunction": "TermsBuilder",
+      "data": {
+        "description": "this is Terms"
+      }
+    },
+    {
+      "name": "Search",
+      "pageSourceFile": "src/main/ets/pages/Search.ets",
+      "buildFunction": "SearchBuilder",
+      "data": {
+        "description": "this is Search"
+      }
+    },
+    {
+      "name": "Settings",
+      "pageSourceFile": "src/main/ets/pages/Settings.ets",
+      "buildFunction": "SettingsBuilder",
+      "data": {
+        "description": "this is Settings"
+      }
+    },
+    {
+      "name": "Help",
+      "pageSourceFile": "src/main/ets/pages/Help.ets",
+      "buildFunction": "HelpBuilder",
+      "data": {
+        "description": "this is Help"
+      }
+    },
+    {
+      "name": "UserProfile",
+      "pageSourceFile": "src/main/ets/pages/UserProfile.ets",
+      "buildFunction": "UserProfileBuilder",
+      "data": {
+        "description": "this is UserProfile"
+      }
+    },
+    {
+      "name": "Record",
+      "pageSourceFile": "src/main/ets/pages/Record.ets",
+      "buildFunction": "RecordBuilder",
+      "data": {
+        "description": "this is Record"
+      }
+    },
+    {
+      "name": "HeritageRegionDetail",
+      "pageSourceFile": "src/main/ets/pages/HeritageRegionDetail.ets",
+      "buildFunction": "HeritageRegionDetailBuilder",
+      "data": {
+        "description": "非遗之声地域详情"
+      }
+    }
+  ]
+}

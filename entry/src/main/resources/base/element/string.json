@@ -1,0 +1,28 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "module description"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "description"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "万物之声"
+    },
+    {
+      "name": "microphone_permission_reason",
+      "value": "需要访问麦克风权限以录制音频内容并发布到论坛"
+    },
+    {
+      "name": "read_media_permission_reason",
+      "value": "需要读取媒体文件权限以播放音乐和查看图片"
+    },
+    {
+      "name": "write_media_permission_reason",
+      "value": "需要写入媒体文件权限以保存录音文件和用户头像"
+    }
+  ]
+}
