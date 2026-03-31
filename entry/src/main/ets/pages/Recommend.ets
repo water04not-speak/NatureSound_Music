@@ -4,6 +4,8 @@ import { it } from "@ohos/hypium"
 import { AppStorageV2 } from '@kit.ArkUI'
 import { ThemeState } from '../models/theme'
 import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils'
+import { defaultMusicSeeds } from '../utils/MusicSeedData'
+import { buildSearchHintPool, pickRandomSearchHint } from '../utils/SearchHintUtils'
 import common from '@ohos.app.ability.common'
 
 interface recommendDailyType {
@@ -25,6 +27,9 @@ export struct Recommend {
   // 主题状态管理实例，用于管理背景颜色
   themeState: ThemeState = AppStorageV2.connect(ThemeState, 'THEME_STATE', () => new ThemeState())!
   pathStack: NavPathStack = AppStorageV2.connect(NavPathStack, 'navStack', () => new NavPathStack())!
+  @State private searchHint: string = '搜索音乐'
+  private searchHintPool: string[] = []
+  private searchHintTimer?: number
   // 轮播图数据
   swiperList:string[]=[
     "app.media.lb_01",
@@ -120,6 +125,26 @@ export struct Recommend {
     return resolveByScreenWidth(this.getScreenWidth(), '30%', '23%', '18%')
   }
 
+  private initSearchHintRotation(): void {
+    this.searchHintPool = buildSearchHintPool(defaultMusicSeeds)
+    this.searchHint = pickRandomSearchHint(this.searchHintPool, '搜索音乐')
+
+    if (this.searchHintTimer !== undefined) {
+      clearInterval(this.searchHintTimer)
+    }
+
+    this.searchHintTimer = setInterval(() => {
+      this.searchHint = pickRandomSearchHint(this.searchHintPool, '搜索音乐')
+    }, 2600)
+  }
+
+  private stopSearchHintRotation(): void {
+    if (this.searchHintTimer !== undefined) {
+      clearInterval(this.searchHintTimer)
+      this.searchHintTimer = undefined
+    }
+  }
+
   @Builder
   titleBuilder (title: string) {
     Row() {
@@ -144,29 +169,23 @@ export struct Recommend {
       //   搜索区域
         Row({ space: 12 }){
           Image($r('app.media.ic_search'))
-            .width(20)
-            // 使用主题的次要文字颜色
-            .fillColor(this.themeState.getSecondaryTextColor())
-          TextInput({placeholder:'Black Veil Bride Rosy赵露思🔥🔥🔥'})
-          // 使用主题的次要文字颜色
-            .placeholderColor(this.themeState.getSecondaryTextColor())
+            .width(18)
+            .height(18)
+            .fillColor('#4AA046')
+
+          Text(this.searchHint)
             .fontSize(15)
-            // 使用主题的主要文字颜色
-            .fontColor(this.themeState.getPrimaryTextColor())
-            .layoutWeight(1)//抛去其他的空间，剩下的空间部分都给它
-            .enabled(false)
-          Image($r('app.media.ic_code'))
-            .width(20)
-            // 使用主题的次要文字颜色
-            .fillColor(this.themeState.getSecondaryTextColor())
+            .fontColor(this.themeState.getSecondaryTextColor())
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .layoutWeight(1)
         }
         .width('100%')
-        .height(44)
-        // 使用主题的搜索框背景颜色
+        .height(46)
         .backgroundColor(this.themeState.getSearchBarColor())
-        .border({radius:22})
+        .borderRadius(23)
         .padding({right:16,left:16})
-        .shadow({ radius: 4, color: 'rgba(0,0,0,0.1)', offsetX: 0, offsetY: 2 })
+        .shadow({ radius: 8, color: 'rgba(0,0,0,0.08)', offsetX: 0, offsetY: 2 })
         .onClick(() => {
           // 点击搜索框跳转到搜索页面
           this.pathStack.pushPathByName('Search', null, false)
@@ -283,6 +302,10 @@ export struct Recommend {
               console.error('Recommend: Failed to initialize theme state:', error)
             })
           }
+          this.initSearchHintRotation()
+        })
+        .onDisAppear(() => {
+          this.stopSearchHintRotation()
         })
     }
     .width('100%')

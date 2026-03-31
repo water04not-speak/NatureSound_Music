@@ -10,6 +10,12 @@ export interface SongItemType {
   author: string
   url: string
   id: string
+  title?: string
+  singer?: string
+  cover?: string
+  lyric?: string
+  isFavorite?: boolean
+  createTime?: number
   /** 纯文本歌词行（可选），用于界面展示与锁屏/通知栏 */
   lyrics?: string[]
   /** 带时间戳的歌词行（可选），用于与播放进度同步高亮 */

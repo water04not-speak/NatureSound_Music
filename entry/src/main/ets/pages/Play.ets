@@ -1,4 +1,4 @@
-import { GlobalMusic } from "../models/globalMusic"
+﻿import { GlobalMusic } from "../models/globalMusic"
 import { SongItemType } from "../models/music"
 import { AppStorageV2 } from "@kit.ArkUI"
 import { playManager } from "../utils/AvPlayerManager"
@@ -13,7 +13,7 @@ export function PlayBuilder() {
 
 @ComponentV2
 struct Play {
-  @Local panelOpacity: number = 0
+  @Local isShowPlaylist: boolean = false
   @Local swiperIndex: number = 0  // 0=播放页 1=歌词页，左滑进入歌词
   pathStack : NavPathStack = new NavPathStack();
 
@@ -443,18 +443,161 @@ struct Play {
   @Local scrollPosition: number = 0
   @Local showScrollTopButton: boolean = false
   @Local showScrollBottomButton: boolean = false
-  private scrollThreshold: number = 5 // 当歌曲数量超过此值时启用滚动
+  private scrollThreshold: number = 5
   private scrollController: Scroller = new Scroller()
+  @Builder
+  PlaylistBuilder() {
+    Column() {
+      // 头部选项卡
+      Scroll() {
+        Row() {
+          Row({ space: 4 }) {
+            Text('正在播放')
+              .fontSize(16)
+              .fontWeight(FontWeight.Bold)
+              .fontColor(this.themeState.getPrimaryTextColor())
+              .border({ width: { bottom: 2 }, color: this.themeState.getPrimaryTextColor() })
+              .padding({ bottom: 4 })
+              
+            Image(('app.media.ic_link')) 
+              .width(14).height(14)
+              .fillColor(this.themeState.getSecondaryTextColor())
+              .visibility(Visibility.None) 
+              
+            Text(this.playState.playList.length.toString())
+              .fontSize(12)
+              .fontColor(this.themeState.getSecondaryTextColor())
+          }
+          .margin({ right: 24 })
+        }
+        .width('100%')
+        .padding({ top: 20, left: 20, right: 20, bottom: 10 })
+        .backgroundColor(this.themeState.getCardBackgroundColor())
+        .borderRadius({ topLeft: 24, topRight: 24 })
+      }.scrollable(ScrollDirection.Horizontal).scrollBar(BarState.Off)
+
+      // 控制栏设置
+      Row() {
+        Row({ space: 8 }) {
+          Image(('app.media.ic_repeat'))
+            .width(20)
+            .height(20)
+            .fillColor(this.themeState.getSecondaryTextColor())
+          Text('顺序播放')
+            .fontSize(14)
+            .fontColor(this.themeState.getSecondaryTextColor())
+        }
+        
+        Blank()
+        
+        Row({ space: 16 }) {
+          Image(('app.media.ic_download_o'))
+            .width(20)
+            .height(20)
+            .fillColor(this.themeState.getSecondaryTextColor())
+          Image(('app.media.ic_collect'))
+            .width(20)
+            .height(20)
+            .fillColor(this.themeState.getSecondaryTextColor())
+          Image(('app.media.ic_close')) 
+            .width(20)
+            .height(20)
+            .fillColor(this.themeState.getSecondaryTextColor())
+            .onClick(() => {
+              this.isShowPlaylist = false
+            })
+        }
+      }
+      .width('100%')
+      .padding({ left: 20, right: 20, top: 10 })
+      .backgroundColor(this.themeState.getCardBackgroundColor())
+
+      List({ scroller: this.scrollController }) {
+        ForEach(this.playState.playList, (item: SongItemType, index: number) => {
+          ListItem() {
+            Row() {
+              Row({ space: 6 }) {
+                Text(item.name)
+                  .fontSize(15)
+                  .fontWeight(FontWeight.Regular)
+                  .fontColor(this.playState.url === item.url ? '#1ECE6A' : this.themeState.getPrimaryTextColor())
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  .layoutWeight(1)
+                
+                Text(' - ' + item.author)
+                  .fontSize(12)
+                  .fontColor(this.playState.url === item.url ? '#1ECE6A' : this.themeState.getSecondaryTextColor())
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+              }
+              .layoutWeight(1)
+              .alignItems(VerticalAlign.Bottom)
+
+              Row({ space: 16 }) {
+                if (this.playState.url === item.url) {
+                  Image(('app.media.wave'))
+                    .width(16)
+                    .height(16)
+                    .fillColor('#1ECE6A')
+                }
+                Image(('app.media.ic_close'))
+                  .width(16)
+                  .height(16)
+                  .fillColor(this.themeState.getSecondaryTextColor())
+                  .onClick(() => {
+                    playManager.removeSong(index)
+                    if(this.playState.playList.length===0){
+                      this.pathStack.pop()
+                    }
+                  })
+                Image(('app.media.ic_list'))
+                  .width(16)
+                  .height(16)
+                  .fillColor(this.themeState.getSecondaryTextColor())
+              }
+            }
+            .padding({ left: 20, right: 20, top: 12, bottom: 12 })
+            .width('100%')
+            .alignItems(VerticalAlign.Center)
+            .onClick(()=>{
+              playManager.singPlay(item)
+            })
+          }
+          .swipeAction({
+            end: this.deleteButton(index)
+          })
+          .border({
+            width: { bottom: 1 },
+            color: this.themeState.getDividerColor()
+          })
+        })
+      }
+      .width('100%')
+      .layoutWeight(1)
+    }
+    .width('100%')
+    .height('100%')
+    .backgroundColor(this.themeState.getCardBackgroundColor())
+  }
 
   build() {
     NavDestination() {
       Stack() {
-        // 主题背景
-        Column()
-          .width('100%')
-          .height('100%')
-          .backgroundColor(this.themeState.getBackgroundColor())
-          .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+                  // �黯ר������
+          Image(this.playState.img)
+            .width('100%')
+            .height('100%')
+            .objectFit(ImageFit.Cover)
+            .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+            .blur(60)
+
+          // ��������
+          Column()
+            .width('100%')
+            .height('100%')
+            .backgroundColor(this.themeState.getIsDark() ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)')
+            .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
 
         // 内容
         Column() {
@@ -503,46 +646,39 @@ struct Play {
               .justifyContent(FlexAlign.Center)
             }
             .layoutWeight(1)
-            // 操作
+                        // ����
             Row() {
-              Badge({ value: '99+', style: { badgeSize: 12, badgeColor: '#45CCCCCC' } }) {
-                Image($r("app.media.ic_like"))
-                  .fillColor(this.themeState.getPlayPageForegroundColor())
-                  .width(24)
-                  .onClick(() => {
-                    console.info('点赞按钮被点击')
-                  })
-              }
+              Image($r("app.media.ic_like"))
+                .fillColor(this.themeState.getPlayPageForegroundColor())
+                .width(28)
+                .onClick(() => {
+                  console.info('���ް�ť�����')
+                })
 
-              Badge({ value: '10W', style: { badgeSize: 12, badgeColor: '#45cccccc' } }) {
-                Image($r("app.media.ic_comment_o"))
-                  .fillColor(this.themeState.getPlayPageForegroundColor())
-                  .width(18)
-                  .onClick(() => {
-                    console.info('评论按钮被点击')
-                  })
-              }
+              Image($r("app.media.ic_comment_o"))
+                .fillColor(this.themeState.getPlayPageForegroundColor())
+                .width(26)
+                .onClick(() => {
+                  console.info('���۱����')
+                })
 
-              Badge({ value: 'hot', style: { badgeSize: 12, badgeColor: '#a8ff3131' } }) {
-                Image($r("app.media.ic_bells_o"))
-                  .fillColor(this.themeState.getPlayPageForegroundColor())
-                  .width(24)
-                  .onClick(() => {
-                    console.info('铃声按钮被点击')
-                  })
-              }
+              Image($r("app.media.ic_bells_o"))
+                .fillColor(this.themeState.getPlayPageForegroundColor())
+                .width(28)
+                .onClick(() => {
+                  console.info('���������')
+                })
 
-              Badge({ value: 'vip', style: { badgeSize: 12, badgeColor: '#b7efd371' } }) {
-                Image($r("app.media.ic_download_o"))
-                  .fillColor(this.themeState.getPlayPageForegroundColor())
-                  .width(24)
-                  .onClick(() => {
-                    console.info('下载按钮被点击')
-                  })
-              }
+              Image($r("app.media.ic_download_o"))
+                .fillColor(this.themeState.getPlayPageForegroundColor())
+                .width(28)
+                .onClick(() => {
+                  console.info('���ر����')
+                })
             }
             .width('100%')
             .justifyContent(FlexAlign.SpaceAround)
+            .padding({ top: 12, bottom: 24 })
             // 播放
             Column() {
               // 进度条
@@ -654,7 +790,7 @@ struct Play {
                   .width(30)
                   .onClick(() => {
                     console.info('播放列表按钮被点击，显示播放列表')
-                    this.panelOpacity = 1
+                    this.isShowPlaylist = true
                   })
               }
               .width('100%')
@@ -669,238 +805,7 @@ struct Play {
           .width('100%')
         }
 
-        // 歌单列表
-        if (this.panelOpacity > 0) {
-          Stack() {
-            // 背景遮罩，点击关闭面板
-            Column() {
-
-            }
-            .width('100%')
-            .height('100%')
-            .onClick(() => {
-              console.info('背景遮罩被点击，关闭面板')
-              this.panelOpacity = 0
-            })
-
-            // 播放列表面板
-            Column() {
-              Row() {
-                Row() {
-                  Image($r("app.media.ic_play"))
-                    .width(20)
-                    .fillColor(this.themeState.getPlayPageForegroundColor())
-                }
-                .width(50)
-                .aspectRatio(1)
-                .justifyContent(FlexAlign.Center)
-
-                Row({ space: 8 }) {
-                  // 反引号——>模板字符串——>支持${变量}
-                  Text(`播放列表 (${this.playState.playList.length})`)
-                    .fontColor(this.themeState.getPlayPageForegroundColor())
-                    .fontSize(14)
-                }
-                .layoutWeight(1)
-
-                Image($r('app.media.ic_close'))
-                  .fillColor(this.themeState.getSecondaryTextColor())
-                  .width(24)
-                  .height(24)
-                  .margin({ right: 16 })
-                  .onClick(() => {
-                    console.info('关闭按钮被点击')
-                    this.panelOpacity = 0
-                  })
-              }
-              .width('100%')
-              .backgroundColor(this.themeState.getCardBackgroundColor())
-              .padding(8)
-              .border({
-                width: { bottom: 1 },
-                color: this.themeState.getDividerColor()
-              })
-              .borderRadius({
-                topLeft: 4,
-                topRight: 4
-              })
-
-              // 播放列表
-              Column() {
-                // 滚动容器
-                if (this.playState.playList.length > this.scrollThreshold) {
-                  Scroll(this.scrollController) {
-                    List() {
-                      ForEach(this.playState.playList, (item: SongItemType, index: number) => {
-                        ListItem() {
-                          Row() {
-                            Row() {
-                              Text((index + 1).toString())
-                                .fontColor(this.themeState.getSecondaryTextColor())
-                            }
-                            .width(50)
-                            .aspectRatio(1)
-                            .justifyContent(FlexAlign.Center)
-
-                            // 列表
-                            Row({ space: 10 }) {
-                              Column() {
-                                Text(item.name)
-                                  .fontSize(14)
-                                  .fontColor(this.themeState.getPrimaryTextColor())
-                                Text(item.author)
-                                  .fontSize(12)
-                                  .fontColor(this.themeState.getSecondaryTextColor())
-                              }
-                              .layoutWeight(1)
-                              .alignItems(HorizontalAlign.Start)
-                              .justifyContent(FlexAlign.Center)
-                            }
-                            .layoutWeight(1)
-
-                            Image($r('app.media.ic_more'))
-                              .width(24)
-                              .height(24)
-                              .margin({ right: 16 })
-                              .fillColor(this.themeState.getIconColor())
-                          }
-                          .alignItems(VerticalAlign.Center)
-                          .onClick(()=>{
-                            console.info('列表项被点击，播放歌曲:', item.name)
-                            playManager.singPlay(item)
-                          })
-                        }
-                        // 侧滑
-                        .swipeAction({
-                          end: this.deleteButton(index)
-                        })
-                        .border({
-                          width: { bottom: 1 },
-                          color: this.themeState.getDividerColor()
-                        })
-                      })
-                    }
-                    .width('100%')
-                    .divider({ strokeWidth: 0.5, color: this.themeState.getDividerColor() })
-                  }
-                  .layoutWeight(1)
-                  .scrollBar(BarState.Auto)
-                  .scrollBarColor(this.themeState.getPlayPageForegroundColor())
-                  .scrollBarWidth(4)
-                  .onScroll((_x: number, y: number) => {
-                    this.scrollPosition = y
-                    this.showScrollTopButton = y > 100
-                    this.showScrollBottomButton = y < Math.max(0, this.playState.playList.length * 60 - this.getScreenHeight() * 0.6)
-                  })
-                } else {
-                  // 不需要滚动时的普通列表
-                  List() {
-                    ForEach(this.playState.playList, (item: SongItemType, index: number) => {
-                      ListItem() {
-                        Row() {
-                          Row() {
-                            Text((index + 1).toString())
-                              .fontColor(this.themeState.getSecondaryTextColor())
-                          }
-                          .width(50)
-                          .aspectRatio(1)
-                          .justifyContent(FlexAlign.Center)
-
-                          // 列表
-                          Row({ space: 10 }) {
-                            Column() {
-                              Text(item.name)
-                                .fontSize(14)
-                                .fontColor(this.themeState.getPrimaryTextColor())
-                              Text(item.author)
-                                .fontSize(12)
-                                .fontColor(this.themeState.getSecondaryTextColor())
-                            }
-                            .layoutWeight(1)
-                            .alignItems(HorizontalAlign.Start)
-                            .justifyContent(FlexAlign.Center)
-                          }
-                          .layoutWeight(1)
-
-                          Image($r('app.media.ic_more'))
-                            .width(24)
-                            .height(24)
-                            .margin({ right: 16 })
-                            .fillColor(this.themeState.getIconColor())
-                        }
-                        .alignItems(VerticalAlign.Center)
-                        .onClick(()=>{
-                          console.info('列表项被点击，播放歌曲:', item.name)
-                          playManager.singPlay(item)
-                        })
-                      }
-                      // 侧滑
-                      .swipeAction({
-                        end: this.deleteButton(index)
-                      })
-                      .border({
-                        width: { bottom: 1 },
-                        color: this.themeState.getDividerColor()
-                      })
-                    })
-                  }
-                  .layoutWeight(1)
-                }
-
-                // 滚动控制按钮
-                if (this.playState.playList.length > this.scrollThreshold) {
-                  Row() {
-                    if (this.showScrollTopButton) {
-                      Button() {
-                        Image($r('app.media.ic_back'))
-                          .width(20)
-                          .height(20)
-                          .fillColor(this.themeState.getPlayPageForegroundColor())
-                      }
-                      .width(40)
-                      .height(40)
-                      .borderRadius(20)
-                      .backgroundColor(this.themeState.getCardBackgroundColor())
-                      .margin({ right: 8 })
-                      .onClick(() => {
-                        this.scrollController.scrollTo({ xOffset: 0, yOffset: 0, animation: true })
-                      })
-                    }
-                    if (this.showScrollBottomButton) {
-                      Button() {
-                        Image($r('app.media.ic_next'))
-                          .width(20)
-                          .height(20)
-                          .fillColor(this.themeState.getPlayPageForegroundColor())
-                      }
-                      .width(40)
-                      .height(40)
-                      .borderRadius(20)
-                      .backgroundColor(this.themeState.getCardBackgroundColor())
-                      .onClick(() => {
-                        this.scrollController.scrollTo({ xOffset: 0, yOffset: this.playState.playList.length * 60, animation: true })
-                      })
-                    }
-                  }
-                  .position({ bottom: 16, right: 16 })
-                  .zIndex(999)
-                }
-              }
-              .width('100%')
-              .height('100%')
-              .backgroundColor(this.themeState.getCardBackgroundColor())
-            }
-            .position({ y: '80%' })
-            .height(this.getPanelHeight())
-            .animation({
-              duration: 300,
-              curve: Curve.EaseInOut
-            })
-            .backgroundColor(this.themeState.getCardBackgroundColor())
-            .opacity(this.panelOpacity)
-            .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
-          }
-        }
+        
       }
       .width('100%')
       .height('100%')
@@ -909,5 +814,6 @@ struct Play {
       this.pathStack = context.pathStack
     })
     .hideTitleBar(true)
+      .bindSheet($$this.isShowPlaylist, this.PlaylistBuilder(), { height: SheetSize.MEDIUM, dragBar: true, backgroundColor: this.themeState.getCardBackgroundColor(), showClose: true })
   }
 }

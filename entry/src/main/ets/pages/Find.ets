@@ -1,359 +1,22 @@
 import { AppStorageV2 } from '@kit.ArkUI'
-import { ThemeState } from '../models/theme'
 import { GlobalMusic } from '../models/globalMusic'
+import { ThemeState } from '../models/theme'
 import { SongItemType } from '../models/music'
+import { musicRepository } from '../utils/MusicRepository'
 import { playManager } from '../utils/AvPlayerManager'
 import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils'
 import common from '@ohos.app.ability.common'
 
 @ComponentV2
 export struct Find {
-  @Local playState: GlobalMusic = playManager.currentSong
+  playState: GlobalMusic = playManager.currentSong
+  @Local private songs: SongItemType[] = []
+  @Local private isLoading: boolean = true
+  @Local private favoriteOnly: boolean = false
+  @Local private errorText: string = ''
+
   themeState: ThemeState = AppStorageV2.connect(ThemeState, 'THEME_STATE', () => new ThemeState())!
   pathStack: NavPathStack = AppStorageV2.connect(NavPathStack, 'navStack', () => new NavPathStack())!
-
-  private songs: SongItemType[] = [
-    {
-      img: 'https://tse3-mm.cn.bing.net/th/id/OIP-C.du5HkZPRv8NeBiI8lyTe2gHaCu?w=343&h=128&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '消愁',
-      author: '毛不易',
-      url: 'http://music.163.com/song/media/outer/url?id=569200213.mp3',
-      id: '0000'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C._LJNEo0ekqtNZL-BmOn3VAHaHa?w=199&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: 'Unit 731',
-      author: 'Tim Moyo',
-      url: 'http://music.163.com/song/media/outer/url?id=2731054516.mp3',
-      id: '0001'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.6O62_eW-0x3-2s0cdubTigHaEN?w=253&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: 'YOUTH',
-      author: 'Troye Sivan',
-      url: 'http://music.163.com/song/media/outer/url?id=2731576429.mp3',
-      id: '0002'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.S6-SPRMftLydAsbrGxMnKgHaHa?w=206&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: 'LOST BOY',
-      author: 'Troye Sivan',
-      url: 'http://music.163.com/song/media/outer/url?id=37988002.mp3',
-      id: '0003'
-    },
-    {
-      img: 'https://ts4.tc.mm.bing.net/th/id/OIP-C.l89zozjdw7Av41tZhMBLHQHaHZ?w=312&h=200&c=12&rs=1&o=6&dpr=1.5&pid=23.1',
-      name: 'テロメアの産声',
-      author: '4円',
-      url: 'http://music.163.com/song/media/outer/url?id=26447699.mp3',
-      id: '0004'
-    },
-    {
-      img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.JsCp2kFMJQNUiJr1z6PztQAAAA?w=151&h=169&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: 'YELLOW',
-      author: '4円',
-      url: 'http://music.163.com/song/media/outer/url?id=1877061646.mp3',
-      id: '0005'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.hsNjPtdOhkVKvQVC4ldOoQAAAA?w=179&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: 'My Heart Will Go On',
-      author: '满舒克,MuSik I,廖伟珊',
-      url: 'http://music.163.com/song/media/outer/url?id=26524701.mp3',
-      id: '0006'
-    },
-    {
-      img: 'https://ts2.tc.mm.bing.net/th/id/OIP-C.S0lemtICbjqpaSpjD1X5fgHaHa?w=200&h=200&c=12&rs=1&p=0&o=6&dpr=1.5&pid=23.1',
-      name: '吹梦到西洲',
-      author: '恋恋故人难,黄诗扶,王敬轩（妖扬）',
-      url: 'http://music.163.com/song/media/outer/url?id=1376873330.mp3',
-      id: '0007'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.b9__SJlShsleGBZklex6ewHaHa?w=194&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: '致你',
-      author: 'yihuik苡慧',
-      url: 'http://music.163.com/song/media/outer/url?id=1867217766.mp3',
-      id: '0008'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.o4smxeuSeyrNsiynINSwywHaHa?w=108&h=108&c=1&bgcl=13d61e&r=0&o=7&dpr=1.5&pid=ImgRC&rm=3',
-      name: '孤独患者',
-      author: '杜宣达',
-      url: 'http://music.163.com/song/media/outer/url?id=2642002866.mp3',
-      id: '0009'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.hnGq0kOiFyAgNrW3ufiq0wHaC4?w=240&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: '紫荆花盛开 ',
-      author: '李荣浩,梁咏琪',
-      url: 'http://music.163.com/song/media/outer/url?id=1959528822.mp3',
-      id: '0010'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.5vMonFOGX7ZQZxN4kAJq6wAAAA?w=190&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: '精卫',
-      author: '一颗狼星',
-      url: 'http://music.163.com/song/media/outer/url?id=2019279516.mp3',
-      id: '0011'
-    },
-    {
-      img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.VuIUZtzmpXgromK5aXymdAHaHa?w=163&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '两 难',
-      author: '加木',
-      url: 'http://music.163.com/song/media/outer/url?id=2163210456.mp3',
-      id: '0012'
-    },
-    {
-      img: 'https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/c8/c4/fa/c8c4fa47-55d8-b5ba-96e5-4b7de76b18e3/cover.jpg/1200x630wp-60.jpg',
-      name: '戒断反应',
-      author: '赵政豪',
-      url: 'http://music.163.com/song/media/outer/url?id=2600442564.mp3',
-      id: '0013'
-    },
-    {
-      img: 'https://img3.kuwo.cn/star/albumcover/500/s4s61/83/1393076434.jpg',
-      name: '给未来的自己',
-      author: '余翊',
-      url: 'http://music.163.com/song/media/outer/url?id=3327521028.mp3',
-      id: '0014'
-    },
-    {
-      img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.6cVHkHcjY27leNEticrH4QHaHa?w=203&h=203&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '迷雾',
-      author: '吴子健REmi',
-      url: 'http://music.163.com/song/media/outer/url?id=3329325495.mp3',
-      id: '0015'
-    },
-    {
-      img: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.DbFschoMC4D56w-hISUNKwAAAA?w=188&h=188&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '霜月遥 - イノチの灯し方 (生命的点燃方式)',
-      author: '霜月瑶',
-      url: 'http://music.163.com/song/media/outer/url?id=473403622.mp3',
-      id: '0016'
-    },
-    {
-      img: 'https://tse3-mm.cn.bing.net/th/id/OIP-C.XCD3rC-U3JB5VemZf1NC1gHaEK?w=285&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '春日影',
-      author: 'CRYCHIC',
-      url: 'http://music.163.com/song/media/outer/url?id=2154464431.mp3',
-      id: '0017'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.bkXzlU64xLuz4OR9A4mJdwAAAA?w=160&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: '像雾',
-      author: '徐秉龙',
-      url: 'http://music.163.com/song/media/outer/url?id=1941323235.mp3',
-      id: '0018'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.KTyTNlQIovW5FKx1e-N_vgHaHa?w=194&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: '出山',
-      author: '花粥,王胜娚',
-      url: 'http://music.163.com/song/media/outer/url?id=1313354324.mp3',
-      id: '0019'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.GVsvj4J7mH4y5W-nJkY9XwAAAA?w=207&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: 'shall we talk.',
-      author: '8bite',
-      url: 'http://music.163.com/song/media/outer/url?id=1986510161.mp3',
-      id: '0020'
-    },
-    {
-      img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.61af9pSkqIrYBNohjSPBrAHaHa?w=170&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '越来越不懂（Cover 蔡健雅）',
-      author: '青尢',
-      url: 'http://music.163.com/song/media/outer/url?id=498311468.mp3',
-      id: '0021'
-    },
-    {
-      img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.vV33icWm5aacmPSnZHg4tgHaGO?w=184&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '勾指起誓',
-      author: '青尢',
-      url: 'http://music.163.com/song/media/outer/url?id=1362503051.mp3',
-      id: '0022'
-    },
-    {
-      img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.Wd5ltXER23yV7zpHskJnrwHaHa?w=178&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '夏天的风（Cover 温岚）',
-      author: '青尢',
-      url: 'http://music.163.com/song/media/outer/url?id=519479311.mp3',
-      id: '0023'
-    },
-    {
-      img: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.1D9C1vapkptbrgC4gJfpzAHaEu?w=269&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '会不会（吉他版）',
-      author: '刘大壮',
-      url: 'http://music.163.com/song/media/outer/url?id=1481164987.mp3',
-      id: '0024'
-    },
-    {
-      img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.BjlCBcr1ivyWGIw-ltPSIQHaHa?w=176&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '我很好（吉他版）',
-      author: '刘大壮',
-      url: 'http://music.163.com/song/media/outer/url?id=1491221473.mp3',
-      id: '0025'
-    },
-    {
-      img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.-aRtG0KjxMEUlPQrqDnIuwHaHa?w=181&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '三号线（吉他版）',
-      author: '刘大壮',
-      url: 'http://music.163.com/song/media/outer/url?id=1497799734.mp3',
-      id: '0026'
-    },
-    {
-      img: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.rU8WoMhtKnlk-VqRPbVYwgHaHa?w=173&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '同花顺',
-      author: 'en（王翊恩）',
-      url: 'http://music.163.com/song/media/outer/url?id=2709706245.mp3',
-      id: '0027'
-    },
-    {
-      img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.7D2qL-1OoZ1foMTd05W3kwHaHa?w=177&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '想自由',
-      author: 'en（王翊恩）',
-      url: 'http://music.163.com/song/media/outer/url?id=2713633715.mp3',
-      id: '0028'
-    },
-    {
-      img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.pwQpy7yybxiaMVdf5JN1SwHaHa?w=203&h=203&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '青丝',
-      author: '等什么君(邓寓君)',
-      url: 'http://music.163.com/song/media/outer/url?id=1412672813.mp3',
-      id: '0029'
-    },
-    {
-      img: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.l84WVS0LEO3AkgPhgLd5BgHaHa?w=203&h=203&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '明月天涯 (翻自 五音JW)',
-      author: '等什么君(邓寓君)',
-      url: 'http://music.163.com/song/media/outer/url?id=1344878089.mp3',
-      id: '0030'
-    },
-    {
-      img: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.803Wns_LS5LsyF9jPNCBJQHaHa?w=138&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '陌路逢君',
-      author: '等什么君(邓寓君)',
-      url: 'http://music.163.com/song/media/outer/url?id=1415078083.mp3',
-      id: '0031'
-    },
-    {
-      img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.r0bLQc8njyOVgXPYuNjSzwHaHa?w=146&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '囍（女生版）',
-      author: '等什么君(邓寓君)',
-      url: 'http://music.163.com/song/media/outer/url?id=1496822949.mp3',
-      id: '0032'
-    },
-    {
-      img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.oGXTK2UGnaPubp-8sK2z4gHaNK?w=114&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '故梦（Cover 橙翼）',
-      author: '双笙（陈元汐）',
-      url: 'http://music.163.com/song/media/outer/url?id=409654891.mp3',
-      id: '0033'
-    },
-    {
-      img: 'https://tse3-mm.cn.bing.net/th/id/OIP-C.SpdFHZJH6jCmCFpZdVONFgHaHa?w=161&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '我的一个道姑朋友',
-      author: '双笙（陈元汐）',
-      url: 'http://music.163.com/song/media/outer/url?id=1367452194.mp3',
-      id: '0034'
-    },
-    {
-      img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.8Ug45VtRuUQEKvQ_dFidwAHaEo?w=256&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '世末歌者（Cover 乐正绫）',
-      author: '双笙（陈元汐）,封茗囧菌',
-      url: 'http://music.163.com/song/media/outer/url?id=429460399.mp3',
-      id: '0035'
-    },
-    {
-      img: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.cvib5ZJDR6YVN_AVEvuqlQHaI_?w=140&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '像我这样的人',
-      author: '毛不易',
-      url: 'http://music.163.com/song/media/outer/url?id=569213220.mp3',
-      id: '0036'
-    },
-    {
-      img: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.l89zozjdw7Av41tZhMBLHQHaHZ?w=162&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '文学少年の憂鬱',
-      author: '4円',
-      url: 'http://music.163.com/song/media/outer/url?id=26447696.mp3',
-      id: '0037'
-    },
-    {
-      img: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.tdBGKfY0RY1jG9nGAGG4wwHaE6?w=253&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '北京东路的日子',
-      author: '汪源',
-      url: 'http://music.163.com/song/media/outer/url?id=458245372.mp3',
-      id: '0038'
-    },
-    {
-      img: 'https://tse3-mm.cn.bing.net/th/id/OIP-C.UnCdU7b4l1oRsWkoTYHDvAAAAA?w=156&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '仙',
-      author: '江皓南',
-      url: 'http://music.163.com/song/media/outer/url?id=2705662118.mp3',
-      id: '0039'
-    },
-    {
-      img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.oBBTKCjV31L4b55GaaVfGgHaHa?w=185&h=192&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '隐喻',
-      author: '廖泽蓝,蘑菇鼠牙',
-      url: 'http://music.163.com/song/media/outer/url?id=3342356985.mp3',
-      id: '0040'
-    },
-    {
-      img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.lMO1xR8TqlSl1Bu50Ll8uQAAAA?w=142&h=188&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '假说',
-      author: '张齐山',
-      url: 'http://music.163.com/song/media/outer/url?id=2738482477.mp3',
-      id: '0041'
-    },
-    {
-      img: 'https://tse3-mm.cn.bing.net/th/id/OIP-C.rtUjhJYVuztUUWDjvZD7LgHaHa?w=149&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: 'I Like Me Better',
-      author: 'Lauv',
-      url: 'http://music.163.com/song/media/outer/url?id=479223413.mp3',
-      id: '0042'
-    },
-    {
-      img: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.y_JPkbQMnC9apViwjVCcLgHaHa?w=184&h=184&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '形容',
-      author: '沈以诚',
-      url: 'http://music.163.com/song/media/outer/url?id=1336856864.mp3',
-      id: '0043'
-    },
-    {
-      img: 'https://tse4-mm.cn.bing.net/th/id/OIP-C.X-8rIiiyDZkw8PXJaLdeigAAAA?w=224&h=147&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '告白',
-      author: '沈以诚',
-      url: 'http://music.163.com/song/media/outer/url?id=1336856449.mp3',
-      id: '0044'
-    },
-    {
-      img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.PRwQ-ELVfPSBH6QfA_JL3wHaE7?w=280&h=187&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '日落大桥',
-      author: '不是花火呀',
-      url: 'http://music.163.com/song/media/outer/url?id=1842743863.mp3',
-      id: '0045'
-    },
-    {
-      img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.Fa9_7omqnMvDG4ISsVHpgAAAAA?w=212&h=176&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '琴师',
-      author: '徐泽（要不要买菜）',
-      url: 'http://music.163.com/song/media/outer/url?id=1406119516.mp3',
-      id: '0046'
-    },
-    {
-      img: 'https://tse3-mm.cn.bing.net/th/id/OIP-C.kUVSnw26NXrhSyFD0b-sWQHaGv?w=171&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: 'There\'s Nothing Holdin\'',
-      author: 'Me Back - Shawn Mendes',
-      url: 'http://music.163.com/song/media/outer/url?id=2656135242.mp3',
-      id: '0047'
-    }
-  ]
-
-  private vipSongIdSet: Set<string> = new Set<string>([
-    '0001', '0003', '0006', '0007', '0013', '0029', '0030', '0032', '0046'
-  ])
 
   private getScreenWidth(): number {
     return getScreenWidthVp()
@@ -391,6 +54,10 @@ export struct Find {
     return resolveByScreenWidth(this.getScreenWidth(), 12, 14, 16)
   }
 
+  private shouldUseSpecialLatinStyle(text: string): boolean {
+    return /[A-Za-z]/.test(text)
+  }
+
   private withAlpha(color: string, alphaHex: string): string {
     const normalized = color.trim()
     if (/^#[0-9a-fA-F]{6}$/.test(normalized)) {
@@ -421,13 +88,90 @@ export struct Find {
     return this.withAlpha(this.getActiveAccentColor(), alpha)
   }
 
-  private getVipTextColor(): string {
-    return '#8A5A00'
+  private async initSongs(): Promise<void> {
+    const abilityCtx = getContext(this) as common.UIAbilityContext
+    this.isLoading = true
+    this.errorText = ''
+
+    try {
+      await musicRepository.init(abilityCtx)
+      await this.reloadSongs()
+    } catch (error) {
+      console.error('[Find] Failed to load songs:', JSON.stringify(error))
+      this.errorText = '音乐列表加载失败'
+      this.isLoading = false
+    }
   }
 
-  private getVipBackgroundColor(): string {
-    return '#F1D26A'
+  private async reloadSongs(): Promise<void> {
+    const abilityCtx = getContext(this) as common.UIAbilityContext
+    try {
+      this.songs = this.favoriteOnly
+        ? await musicRepository.getFavoriteSongs(abilityCtx)
+        : await musicRepository.getAllSongs(abilityCtx)
+    } catch (error) {
+      console.error('[Find] Failed to refresh songs:', JSON.stringify(error))
+      this.errorText = '音乐列表加载失败'
+      this.songs = []
+    } finally {
+      this.isLoading = false
+    }
   }
+
+  private openSong(item: SongItemType): void {
+    this.pathStack.pushPathByName('Play', null, false)
+    playManager.singPlayFromList(item, this.songs)
+  }
+
+  private updateFavoriteState(itemId: string, isFavorite: boolean): void {
+    this.songs = this.songs.map((song: SongItemType) => {
+      if (song.id !== itemId) {
+        return song
+      }
+
+      return {
+        id: song.id,
+        name: song.name,
+        author: song.author,
+        url: song.url,
+        img: song.img,
+        title: song.title,
+        singer: song.singer,
+        cover: song.cover,
+        lyric: song.lyric,
+        isFavorite: isFavorite,
+        createTime: song.createTime,
+        lyrics: song.lyrics,
+        lyricLines: song.lyricLines
+      }
+    })
+  }
+
+  private checkFavorite(songId: string, fallback: boolean | undefined): boolean {
+    const song = this.songs.find((s: SongItemType) => s.id === songId)
+    return song ? (song.isFavorite === true) : (fallback === true)
+  }
+
+  private async toggleFavorite(item: SongItemType): Promise<void> {
+    const abilityCtx = getContext(this) as common.UIAbilityContext
+    const currentItem = this.songs.find((s: SongItemType) => s.id === item.id) ?? item
+    const nextState = !currentItem.isFavorite
+    this.updateFavoriteState(item.id, nextState)
+
+    try {
+      const updatedItem = await musicRepository.toggleFavorite(abilityCtx, item.id)
+      if (updatedItem) {
+        this.updateFavoriteState(item.id, updatedItem.isFavorite ?? nextState)
+      }
+    } catch (error) {
+      this.updateFavoriteState(item.id, currentItem.isFavorite ?? false)
+      console.error('[Find] Failed to toggle favorite:', JSON.stringify(error))
+    }
+  }
+
+  private vipSongIdSet: Set<string> = new Set<string>([
+    '0001', '0003', '0006', '0007', '0013', '0029', '0030', '0032', '0046'
+  ])
 
   private isVipSong(songId: string): boolean {
     return this.vipSongIdSet.has(songId)
@@ -436,123 +180,197 @@ export struct Find {
   aboutToAppear(): void {
     const abilityCtx = getContext(this) as common.UIAbilityContext
     void this.themeState.initFromContext(abilityCtx)
+    void this.initSongs()
   }
 
   build() {
     Column() {
       Row() {
-        Text('我的歌单')
-          .fontSize(this.getTitleFontSize())
+        Row({ space: 8 }) {
+          Text('我的歌单')
+            .fontSize(this.getTitleFontSize())
+            .fontWeight(FontWeight.Medium)
+            .fontColor(this.themeState.getPrimaryTextColor())
+            .opacity(0.8)
+
+          Text('My playlist~')
+            .fontSize(this.getSubtitleFontSize())
+            .fontStyle(FontStyle.Italic)
+            .fontFamily('serif')
+            .fontWeight(FontWeight.Medium)
+            .fontColor(this.themeState.getSecondaryTextColor())
+            .opacity(0.82)
+            .margin({ top: 5 })
+        }
+        .layoutWeight(1)
+
+        Text(this.favoriteOnly ? '收藏中' : '全部')
+          .fontSize(12)
           .fontWeight(FontWeight.Medium)
           .fontColor(this.themeState.getPrimaryTextColor())
-          .opacity(0.72)
-        Text('My playlist~')
-          .fontColor(this.themeState.getPrimaryTextColor())
-          .fontFamily('serif')
-          .opacity(0.82)
-          .letterSpacing(1.1)
-          .fontSize(this.getSubtitleFontSize())
-          .fontStyle(FontStyle.Italic)
-          .fontWeight(FontWeight.Medium)
-          .width('100%')
-          .margin({ left: 12 })
+          .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+          .backgroundColor(this.themeState.getCardBackgroundColor())
+          .borderRadius(14)
+          .onClick(() => {
+            this.favoriteOnly = !this.favoriteOnly
+            void this.reloadSongs()
+          })
       }
       .width('100%')
-      .padding({ left: this.getListHorizontalPadding(), right: this.getListHorizontalPadding(), top: 12, bottom: 4 })
+      .padding({ left: this.getListHorizontalPadding(), right: this.getListHorizontalPadding(), top: 12, bottom: 6 })
 
-      List() {
-        ForEach(this.songs, (item: SongItemType) => {
-          ListItem() {
-            Row({ space: 12 }) {
-              Stack({ alignContent: Alignment.BottomEnd }) {
-                Image(item.img)
-                  .width(this.getImageWidth())
-                  .height(this.getImageWidth())
-                  .borderRadius(8)
-                  .objectFit(ImageFit.Cover)
-
-                if (this.playState.url === item.url) {
-                  Column()
+      if (this.isLoading) {
+        Column() {
+          LoadingProgress()
+          Text('正在加载本地音乐库...')
+            .fontSize(14)
+            .fontColor(this.themeState.getSecondaryTextColor())
+            .margin({ top: 12 })
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+      } else if (this.errorText) {
+        Column() {
+          Text(this.errorText)
+            .fontSize(14)
+            .fontColor(this.themeState.getSecondaryTextColor())
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+      } else {
+        List() {
+          ForEach(this.songs, (item: SongItemType) => {
+            ListItem() {
+              Row({ space: 10 }) {
+                Stack({ alignContent: Alignment.BottomEnd }) {
+                  Image(item.cover ?? item.img)
                     .width(this.getImageWidth())
                     .height(this.getImageWidth())
-                    .backgroundColor(this.getPlayingMaskColor())
-                    .borderRadius(8)
-                }
+                    .borderRadius(10)
+                    .objectFit(ImageFit.Cover)
 
-                if (this.playState.url === item.url) {
-                  Stack({ alignContent: Alignment.Center }) {
+                  if (this.playState.url === item.url) {
                     Column()
-                      .width(22)
-                      .height(22)
-                      .borderRadius(11)
-                      .backgroundColor(this.getPlayingBadgeColor())
-
-                    Image($r('app.media.ic_playing'))
-                      .width(14)
-                      .height(14)
-                      .borderRadius(7)
+                      .width(this.getImageWidth())
+                      .height(this.getImageWidth())
+                      .backgroundColor(this.getPlayingMaskColor())
+                      .borderRadius(10)
                   }
-                  .margin({ right: 6, bottom: 6 })
-                }
-              }
-              .width(this.getImageWidth())
-              .height(this.getImageWidth())
 
-              Column({ space: 4 }) {
-                Row({ space: 8 }) {
-                  Text(item.name)
-                    .fontSize(this.getSongNameFontSize())
-                    .fontWeight(FontWeight.Medium)
-                    .fontColor(this.playState.url === item.url ? this.getActiveAccentColor() : this.themeState.getPrimaryTextColor())
+                  if (this.playState.url === item.url) {
+                    Stack({ alignContent: Alignment.Center }) {
+                      Column()
+                        .width(22)
+                        .height(22)
+                        .borderRadius(11)
+                        .backgroundColor(this.getPlayingBadgeColor())
+
+                      Image($r('app.media.ic_playing'))
+                        .width(14)
+                        .height(14)
+                        .borderRadius(7)
+                    }
+                    .margin({ right: 6, bottom: 6 })
+                  }
+                }
+                .width(this.getImageWidth())
+                .height(this.getImageWidth())
+
+                Column({ space: 4 }) {
+                  Row({ space: 8 }) {
+                    if (this.shouldUseSpecialLatinStyle(item.name)) {
+                      Text(item.name)
+                        .fontSize(this.getSongNameFontSize())
+                        .fontWeight(FontWeight.Medium)
+                        .fontStyle(FontStyle.Italic)
+                        .fontFamily('serif')
+                        .fontColor(this.playState.url === item.url ? this.getActiveAccentColor() : this.themeState.getPrimaryTextColor())
+                        .maxLines(1)
+                        .textOverflow({ overflow: TextOverflow.Ellipsis })
+                        .layoutWeight(1)
+                    } else {
+                      Text(item.name)
+                        .fontSize(this.getSongNameFontSize())
+                        .fontWeight(FontWeight.Medium)
+                        .fontColor(this.playState.url === item.url ? this.getActiveAccentColor() : this.themeState.getPrimaryTextColor())
+                        .maxLines(1)
+                        .textOverflow({ overflow: TextOverflow.Ellipsis })
+                        .layoutWeight(1)
+                    }
+
+                    if (this.isVipSong(item.id)) {
+                      Text('VIP')
+                        .fontSize(10)
+                        .fontColor('#D2A04B')
+                        .backgroundColor(this.withAlpha('#D2A04B', '1A'))
+                        .padding({ left: 4, right: 4, top: 2, bottom: 2 })
+                        .borderRadius(4)
+                    }
+                  }
+                  .width('100%')
+
+                  Text(item.author)
+                    .fontSize(this.getAuthorFontSize())
+                    .fontColor(this.playState.url === item.url ? this.themeState.getPrimaryTextColor() : this.themeState.getSecondaryTextColor())
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-                  if (this.isVipSong(item.id)) {
-                    Text('VIP')
-                      .fontSize(10)
-                      .fontWeight(FontWeight.Medium)
-                      .fontColor(this.getVipTextColor())
-                      .padding({ left: 6, right: 6, top: 1, bottom: 1 })
-                      .backgroundColor(this.getVipBackgroundColor())
-                      .borderRadius(8)
-                  }
+                    .opacity(0.86)
                 }
-                .width('100%')
+                .layoutWeight(1)
+                .alignItems(HorizontalAlign.Start)
+                .justifyContent(FlexAlign.Center)
+                .onClick(() => {
+                  this.openSong(item)
+                })
 
-                Text(item.author)
-                  .fontSize(this.getAuthorFontSize())
-                  .fontColor(this.playState.url === item.url ? this.themeState.getPrimaryTextColor() : this.themeState.getSecondaryTextColor())
-                  .maxLines(1)
-                  .textOverflow({ overflow: TextOverflow.Ellipsis })
-                  .opacity(0.86)
+                Row({ space: 16 }) {
+                  Row({ space: 4 }) {
+                    Image(this.checkFavorite(item.id, item.isFavorite) ? $r('app.media.ic_like') : $r('app.media.ic_favorite'))
+                      .width(18)
+                      .height(18)
+                      .fillColor(this.checkFavorite(item.id, item.isFavorite) ? '#ff4040' : this.themeState.getSecondaryTextColor())
+
+                    Text(this.checkFavorite(item.id, item.isFavorite) ? '18.6w' : '18.5w')
+                      .fontSize(12)
+                      .fontColor(this.checkFavorite(item.id, item.isFavorite) ? '#ff4040' : this.themeState.getSecondaryTextColor())
+                  }
+                  .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+                  .borderRadius(14)
+                  .backgroundColor(this.checkFavorite(item.id, item.isFavorite) ? 'rgba(255, 64, 64, 0.10)' : 'transparent')
+                  .zIndex(1)
+                  .onClick(() => {
+                    void this.toggleFavorite(item)
+                  })
+
+                  Image($r('app.media.ic_more'))
+                    .width(this.getMoreIconWidth())
+                    .height(this.getMoreIconWidth())
+                    .fillColor(this.themeState.getIconColor())
+                    .onClick(() => {
+                      // 保留现有布局，后续可接更多菜单
+                    })
+                }
+                .alignItems(VerticalAlign.Center)
               }
-              .layoutWeight(1)
-              .alignItems(HorizontalAlign.Start)
-              .justifyContent(FlexAlign.Center)
-
-              Image($r('app.media.ic_more'))
-                .width(this.getMoreIconWidth())
-                .height(this.getMoreIconWidth())
-                .fillColor(this.themeState.getIconColor())
+              .width('100%')
+              .height(this.getListItemHeight())
+              .padding({ left: this.getListHorizontalPadding(), right: this.getListHorizontalPadding() })
+              .backgroundColor(this.playState.url === item.url ? this.getActiveRowColor() : this.themeState.getBackgroundColor())
+              .borderRadius(this.playState.url === item.url ? 12 : 0)
+              .border({ width: { bottom: 0.5 }, color: this.themeState.getDividerColor() })
             }
-            .width('100%')
-            .height(this.getListItemHeight())
-            .padding({ left: this.getListHorizontalPadding(), right: this.getListHorizontalPadding() })
-            .backgroundColor(this.playState.url === item.url ? this.getActiveRowColor() : this.themeState.getBackgroundColor())
-            .borderRadius(this.playState.url === item.url ? 12 : 0)
-            .border({ width: { bottom: 0.5 }, color: this.themeState.getDividerColor() })
-            .onClick(() => {
-              this.pathStack.pushPathByName('Play', null, false)
-              playManager.singPlayFromList(item, this.songs)
-            })
-          }
-        }, (item: SongItemType) => item.id)
+          }, (item: SongItemType) => item.id)
+        }
+        .width('100%')
+        .height('100%')
+        .layoutWeight(1)
+        .scrollBar(BarState.Off)
+        .padding({ bottom: 12 })
       }
-      .width('100%')
-      .height('100%')
-      .layoutWeight(1)
-      .scrollBar(BarState.Off)
-      .padding({ bottom: 12 })
     }
     .width('100%')
     .height('100%')

@@ -3,6 +3,8 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { playManager } from '../utils/AvPlayerManager';
 import { sessionManager } from '../utils/AvSessionManager';
+import { musicRepository } from '../utils/MusicRepository';
+import { defaultMusicSeeds } from '../utils/MusicSeedData';
 
 const DOMAIN = 0x0000;
 
@@ -25,6 +27,14 @@ export default class EntryAbility extends UIAbility {
       hilog.info(DOMAIN, 'testTag', '%{public}s', '播放器初始化成功');
     }).catch((error: Error) => {
       hilog.error(DOMAIN, 'testTag', '播放器初始化失败: %{public}s', JSON.stringify(error));
+    });
+
+    void musicRepository.init(this.context).then(() => {
+      return musicRepository.seedIfNeeded(this.context, defaultMusicSeeds)
+    }).then(() => {
+      hilog.info(DOMAIN, 'testTag', '%{public}s', '音乐数据库初始化成功');
+    }).catch((error: Error) => {
+      hilog.error(DOMAIN, 'testTag', '音乐数据库初始化失败: %{public}s', JSON.stringify(error));
     });
     
     //配置加载哪个页面
