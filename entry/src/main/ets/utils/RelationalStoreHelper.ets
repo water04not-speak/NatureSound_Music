@@ -1,6 +1,7 @@
-import { RdbStore, RdbOpenCallback, RdbPredicates, RdbStoreConfig } from '@ohos.data.rdb';
+import relationalStore from '@ohos.data.relationalStore';
+import common from '@ohos.app.ability.common';
 
-const DB_NAME = 'MusicDatabase';
+const DB_NAME = 'MusicDatabase.db';
 const TABLE_NAME = 'Music';
 
 const CREATE_TABLE_SQL = `CREATE TABLE IF NOT EXISTS ${TABLE_NAME} (
@@ -14,9 +15,29 @@ const CREATE_TABLE_SQL = `CREATE TABLE IF NOT EXISTS ${TABLE_NAME} (
   createTime INTEGER DEFAULT (strftime('%s', 'now'))
 )`;
 
+export interface MusicRecord {
+  id: number;
+  title: string;
+  singer: string;
+  url: string;
+  cover: string;
+  lyric: string;
+  isFavorite: number;
+  createTime: number;
+}
+
+export interface InsertMusicData {
+  title: string;
+  singer: string;
+  url: string;
+  cover?: string;
+  lyric?: string;
+  isFavorite?: number;
+}
+
 export class RelationalStoreHelper {
   private static instance: RelationalStoreHelper;
-  private rdbStore: RdbStore | null = null;
+  private rdbStore: relationalStore.RdbStore | null = null;
 
   private constructor() {}
 
@@ -27,43 +48,40 @@ export class RelationalStoreHelper {
     return RelationalStoreHelper.instance;
   }
 
-  async initDatabase(): Promise<void> {
-    const config: RdbStoreConfig = {
+  async initDatabase(context: common.Context): Promise<void> {
+    if (this.rdbStore) {
+      return;
+    }
+    const config: relationalStore.StoreConfig = {
       name: DB_NAME,
+      securityLevel: relationalStore.SecurityLevel.S1,
     };
-    const rdbOpenCallback: RdbOpenCallback = {
-      onCreate: (db: RdbStore) => {
-        db.executeSql(CREATE_TABLE_SQL, []);
-      },
-      onUpgrade: (db: RdbStore, oldVersion: number, newVersion: number) => {
-        // Handle database upgrade logic if needed
-      },
-    };
-    this.rdbStore = await RdbStore.getRdbStore(globalThis.getContext(), config, 1, rdbOpenCallback);
+    this.rdbStore = await relationalStore.getRdbStore(context, config);
+    await this.rdbStore.executeSql(CREATE_TABLE_SQL);
   }
 
-  async insertMusic(data: { title: string; singer: string; url: string; cover?: string; lyric?: string; isFavorite?: number }): Promise<number> {
+  async insertMusic(data: InsertMusicData): Promise<number> {
     if (!this.rdbStore) {
       throw new Error('Database not initialized');
     }
-    const values = {
+    const values: relationalStore.ValuesBucket = {
       title: data.title,
       singer: data.singer,
       url: data.url,
-      cover: data.cover || null,
-      lyric: data.lyric || null,
-      isFavorite: data.isFavorite || 0,
+      cover: data.cover ?? null,
+      lyric: data.lyric ?? null,
+      isFavorite: data.isFavorite ?? 0,
     };
     return await this.rdbStore.insert(TABLE_NAME, values);
   }
 
-  async queryAllMusic(): Promise<Array<any>> {
+  async queryAllMusic(): Promise<Array<MusicRecord>> {
     if (!this.rdbStore) {
       throw new Error('Database not initialized');
     }
-    const predicates = new RdbPredicates(TABLE_NAME);
+    const predicates = new relationalStore.RdbPredicates(TABLE_NAME);
     const resultSet = await this.rdbStore.query(predicates);
-    const results: Array<any> = [];
+    const results: Array<MusicRecord> = [];
     while (resultSet.goToNextRow()) {
       results.push({
         id: resultSet.getLong(resultSet.getColumnIndex('id')),
@@ -84,9 +102,9 @@ export class RelationalStoreHelper {
     if (!this.rdbStore) {
       throw new Error('Database not initialized');
     }
-    const predicates = new RdbPredicates(TABLE_NAME);
+    const predicates = new relationalStore.RdbPredicates(TABLE_NAME);
     predicates.equalTo('id', id);
-    const values = { isFavorite };
+    const values: relationalStore.ValuesBucket = { isFavorite };
     await this.rdbStore.update(values, predicates);
   }
 
@@ -94,7 +112,7 @@ export class RelationalStoreHelper {
     if (!this.rdbStore) {
       throw new Error('Database not initialized');
     }
-    const predicates = new RdbPredicates(TABLE_NAME);
+    const predicates = new relationalStore.RdbPredicates(TABLE_NAME);
     predicates.equalTo('id', id);
     await this.rdbStore.delete(predicates);
   }

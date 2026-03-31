@@ -6,7 +6,7 @@ import { HeritageRegionParams } from './HeritageRegionDetail'
 import { SongItemType } from '../models/music'
 import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils'
 import common from '@ohos.app.ability.common'
-import { RelationalStoreHelper } from '../utils/RelationalStoreHelper'
+import { RelationalStoreHelper, MusicRecord } from '../utils/RelationalStoreHelper'
 
 // 地域卡片类型
 interface HeritageRegionItem {
@@ -534,10 +534,12 @@ export struct MusicFeast {
     return resolveByScreenWidth(getScreenWidthVp(), '1fr 1fr', '1fr 1fr 1fr', '1fr 1fr 1fr 1fr')
   }
 
-  private musicList: Array<any> = [];
+  @Local private musicList: MusicRecord[] = [];
 
   async loadMusicFromDatabase() {
+    const ctx = getContext(this) as common.Context;
     const dbHelper = RelationalStoreHelper.getInstance();
+    await dbHelper.initDatabase(ctx);
     this.musicList = await dbHelper.queryAllMusic();
   }
 
@@ -565,7 +567,7 @@ export struct MusicFeast {
       .justifyContent(FlexAlign.Start)
 
       // 音乐列表展示
-      ForEach(this.musicList, (item: any) => {
+      ForEach(this.musicList, (item: MusicRecord) => {
         Row() {
           Image(item.cover)
             .width(50)
@@ -583,14 +585,16 @@ export struct MusicFeast {
           .padding({ left: 8 })
           Button(item.isFavorite === 1 ? '取消收藏' : '收藏')
             .onClick(() => {
-              void this.toggleFavorite(item.id, item.isFavorite);
+              this.toggleFavorite(item.id, item.isFavorite).catch((err: Error) => {
+                console.error('toggleFavorite failed:', err);
+              });
             });
         }
         .padding(8)
         .onClick(() => {
           // 播放音乐逻辑
         });
-      }, (item: any) => item.id);
+      }, (item: MusicRecord) => item.id.toString());
     }
     .width('100%')
     .height('100%')
