@@ -6,6 +6,7 @@ import { HeritageRegionParams } from './HeritageRegionDetail'
 import { SongItemType } from '../models/music'
 import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils'
 import common from '@ohos.app.ability.common'
+import { RelationalStoreHelper } from '../utils/RelationalStoreHelper'
 
 // 地域卡片类型
 interface HeritageRegionItem {
@@ -533,61 +534,70 @@ export struct MusicFeast {
     return resolveByScreenWidth(getScreenWidthVp(), '1fr 1fr', '1fr 1fr 1fr', '1fr 1fr 1fr 1fr')
   }
 
+  private musicList: Array<any> = [];
+
+  async loadMusicFromDatabase() {
+    const dbHelper = RelationalStoreHelper.getInstance();
+    this.musicList = await dbHelper.queryAllMusic();
+  }
+
+  async toggleFavorite(musicId: number, currentStatus: number) {
+    const dbHelper = RelationalStoreHelper.getInstance();
+    const newStatus = currentStatus === 1 ? 0 : 1;
+    await dbHelper.updateFavoriteStatus(musicId, newStatus);
+    await this.loadMusicFromDatabase();
+  }
+
   build() {
     Column() {
       // 顶部标题区域
       Row() {
         Text('声宴')
-          .fontSize(24)
-          .fontWeight(FontWeight.Medium)
-          .fontColor(this.themeState.getPrimaryTextColor())
-          .fontStyle(FontStyle.Italic)
+          .fontSize(20)
+          .fontWeight(FontWeight.Bold)
           .opacity(0.72)
         Text('  Music Feast ~')
-          .fontSize(14)
-          .fontStyle(FontStyle.Italic)
-          .fontFamily('serif')
-          .opacity(0.82)
-          .letterSpacing(1.1)
-          .fontColor(this.themeState.getSecondaryTextColor())
-          .margin({ left: 12 })
-          .alignSelf(ItemAlign.End)
-          .margin({ bottom: 4 ,left:2})
+          .fontSize(16)
+          .opacity(0.5)
       }
       .width('100%')
       .padding({ left: 8, right: 8, top: 8, bottom: 4 })
       .justifyContent(FlexAlign.Start)
 
-      // 简介区域
-      Text('聆听山河古韵，传承千年声脉。一方水土一方歌，让非遗音乐在数字时代生生不息。')
-        .fontSize(14)
-        .fontColor(this.themeState.getSecondaryTextColor())
-        .width('100%')
-        .padding({ left: 8, right: 8, bottom: 8 })
-        .textAlign(TextAlign.Start)
-
-      // 卡片网格
-      Grid() {
-        ForEach(this.regionList, (item: HeritageRegionItem) => {
-          GridItem() {
-            this.renderRegionCard(item)
+      // 音乐列表展示
+      ForEach(this.musicList, (item: any) => {
+        Row() {
+          Image(item.cover)
+            .width(50)
+            .height(50)
+            .borderRadius(8)
+            .objectFit(ImageFit.Cover)
+          Column() {
+            Text(item.title)
+              .fontSize(16)
+              .fontWeight(FontWeight.Bold)
+            Text(item.singer)
+              .fontSize(14)
+              .opacity(0.6)
           }
-        }, (item: HeritageRegionItem) => item.id)
-      }
-      .columnsTemplate(this.getColumnsCount())
-      .rowsGap(8)
-      .columnsGap(8)
-      .width('100%')
-      .layoutWeight(1)
-      .padding({ left: 8, right: 8, bottom: 16 })
+          .padding({ left: 8 })
+          Button(item.isFavorite === 1 ? '取消收藏' : '收藏')
+            .onClick(() => {
+              void this.toggleFavorite(item.id, item.isFavorite);
+            });
+        }
+        .padding(8)
+        .onClick(() => {
+          // 播放音乐逻辑
+        });
+      }, (item: any) => item.id);
     }
     .width('100%')
     .height('100%')
     .backgroundColor(this.themeState.getBackgroundColor())
     .expandSafeArea()
-    .onAppear(() => {
-      const abilityCtx = getContext(this) as common.UIAbilityContext
-      void this.themeState.initFromContext(abilityCtx)
-    })
+    .onAppear(async () => {
+      await this.loadMusicFromDatabase();
+    });
   }
 }
