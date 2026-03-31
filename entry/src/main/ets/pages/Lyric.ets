@@ -16,10 +16,7 @@ struct Lyric {
 
   // 当前播放的歌曲
   @Local
-  playState: GlobalMusic = AppStorageV2.connect(GlobalMusic, 'SONG_KEY', () => {
-    const music = new GlobalMusic()
-    return music
-  })!
+  playState: GlobalMusic = playManager.currentSong
 
   themeState: ThemeState = AppStorageV2.connect(ThemeState, 'THEME_STATE', () => new ThemeState())!
 

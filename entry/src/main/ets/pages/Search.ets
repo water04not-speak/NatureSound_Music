@@ -29,7 +29,7 @@ export struct SearchPage {
   
   pathStack: NavPathStack = new NavPathStack()
   themeState: ThemeState = AppStorageV2.connect(ThemeState, 'THEME_STATE', () => new ThemeState())!
-  playState: GlobalMusic = AppStorageV2.connect(GlobalMusic, 'SONG_KEY', () => new GlobalMusic())!
+  playState: GlobalMusic = playManager.currentSong
   
   // 模拟歌曲库（实际应从服务器获取）
   private allSongs: SongItemType[] = [

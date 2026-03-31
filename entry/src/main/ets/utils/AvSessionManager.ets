@@ -3,12 +3,12 @@ import { Context, wantAgent } from '@kit.AbilityKit'
 import backgroundTaskManager from '@ohos.resourceschedule.backgroundTaskManager'
 import { SongItemType } from '../models/music'
 import { GlobalMusic } from '../models/globalMusic'
-import { AppStorageV2 } from '@kit.ArkUI'
-import { playManager } from './AvPlayerManager'
+import { currentSong as sharedCurrentSong } from './PlaybackState'
+import { playerBridge } from './AvPlayerBridge'
 
 class AvSessionManager{
   session:avSession.AVSession | null =null
-  playState:GlobalMusic=AppStorageV2.connect(GlobalMusic,'SONG_KEY',()=>new GlobalMusic())!//不为空时等号赋值
+  playState:GlobalMusic=sharedCurrentSong//不为空时等号赋值
 
   async init(content:Context){
      this.session =await avSession.createAVSession(content,'bgPlay','audio')
@@ -72,19 +72,19 @@ class AvSessionManager{
 // 注册事件
   registerEvent(){
     this.session?.on('play',()=>{
-      playManager.singPlay(this.playState.playList[this.playState.playIndex])
+      playerBridge.singPlay(this.playState.playList[this.playState.playIndex])
     })
     this.session?.on('pause',()=>{
-      playManager.paused()
+      playerBridge.paused()
     })
     this.session?.on('playPrevious',()=>{
-      playManager.prevPlay()
+      playerBridge.prevPlay()
     })
     this.session?.on('playNext',()=>{
-      playManager.nextPlay()
+      playerBridge.nextPlay()
     })
     this.session?.on('seek',(value:number)=>{
-      playManager.seekPlay(value)
+      playerBridge.seekPlay(value)
     })
     // 激活
     this.session?.activate()

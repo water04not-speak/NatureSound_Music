@@ -1,6 +1,7 @@
 // 跳转页面入口函数
 // 进入的广告页
 import { AppStorageV2 } from '@kit.ArkUI';
+import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils'
 
 @Builder
 export function StartBuilder() {
@@ -21,40 +22,19 @@ struct Start {
 
   // 响应式布局配置
   private getScreenWidth(): number {
-    return px2vp(globalThis.displayInfo?.width || 360)
+    return getScreenWidthVp()
   }
 
   private getButtonWidth(): number {
-    let screenWidth = this.getScreenWidth()
-    if (screenWidth >= 1200) {
-      return 80 // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return 70 // 平板
-    } else {
-      return 60 // 手机
-    }
+    return resolveByScreenWidth(this.getScreenWidth(), 60, 70, 80)
   }
 
   private getButtonHeight(): number {
-    let screenWidth = this.getScreenWidth()
-    if (screenWidth >= 1200) {
-      return 40 // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return 35 // 平板
-    } else {
-      return 30 // 手机
-    }
+    return resolveByScreenWidth(this.getScreenWidth(), 30, 35, 40)
   }
 
   private getButtonMargin(): number {
-    let screenWidth = this.getScreenWidth()
-    if (screenWidth >= 1200) {
-      return 30 // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return 20 // 平板
-    } else {
-      return 15 // 手机
-    }
+    return resolveByScreenWidth(this.getScreenWidth(), 15, 20, 30)
   }
 
   build() {

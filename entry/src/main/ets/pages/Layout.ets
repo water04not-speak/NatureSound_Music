@@ -8,6 +8,7 @@ import { Login } from "./Login";
 import { AppStorageV2 } from '@kit.ArkUI';
 import { UserState } from '../models/user';
 import { ThemeState } from '../models/theme';
+import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils';
 import common from '@ohos.app.ability.common';
 import {MusicFeast} from "./MusicFeast"
 interface TabClass{
@@ -52,40 +53,19 @@ struct Layout {
 
   // 响应式布局配置
   private getScreenWidth(): number {
-    return px2vp(globalThis.displayInfo?.width || 360)
+    return getScreenWidthVp()
   }
 
   private getTabIconSize(): number {
-    let screenWidth = this.getScreenWidth()
-    if (screenWidth >= 1200) {
-      return 32 // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return 28 // 平板
-    } else {
-      return 24 // 手机
-    }
+    return resolveByScreenWidth(this.getScreenWidth(), 24, 28, 32)
   }
 
   private getTabFontSize(): number {
-    let screenWidth = this.getScreenWidth()
-    if (screenWidth >= 1200) {
-      return 16 // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return 15 // 平板
-    } else {
-      return 14 // 手机
-    }
+    return resolveByScreenWidth(this.getScreenWidth(), 14, 15, 16)
   }
 
   private getTabSpace(): number {
-    let screenWidth = this.getScreenWidth()
-    if (screenWidth >= 1200) {
-      return 8 // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return 6 // 平板
-    } else {
-      return 5 // 手机
-    }
+    return resolveByScreenWidth(this.getScreenWidth(), 5, 6, 8)
   }
 
   @Builder

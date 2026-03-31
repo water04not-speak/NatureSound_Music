@@ -3,19 +3,12 @@
 import { AppStorageV2 } from '@kit.ArkUI'
 import { ThemeState } from '../models/theme'
 import { HeritageRegionParams } from './HeritageRegionDetail'
+import { SongItemType } from '../models/music'
+import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils'
 import common from '@ohos.app.ability.common'
 
-// 歌曲类型
-interface SongItemType {
-  img: string
-  name: string
-  author: string
-  url: string
-  id: string
-}
-
-// 地域类型
-interface HeritageRegionType {
+// 地域卡片类型
+interface HeritageRegionItem {
   id: string
   name: string
   cover: ResourceStr
@@ -34,8 +27,8 @@ export struct MusicFeast {
   themeState: ThemeState = AppStorageV2.connect(ThemeState, 'THEME_STATE', () => new ThemeState())!
   pathStack: NavPathStack = AppStorageV2.connect(NavPathStack, 'navStack', () => new NavPathStack())!
 
-  // 音乐风格数据
-  @Local private regionList: HeritageRegionType[] = [
+  // 地域音乐数据
+  @Local private regionList: HeritageRegionItem[] = [
     {
       id: 'yangtze-delta',
       name: '长三角地区',
@@ -488,7 +481,7 @@ export struct MusicFeast {
   ]
 
   // 点击地域卡片，跳转到详情
-  private handleRegionClick(region: HeritageRegionType): void {
+  private handleRegionClick(region: HeritageRegionItem): void {
     const params = AppStorageV2.connect(HeritageRegionParams, 'heritageRegionParams', () => new HeritageRegionParams())!
     params.regionId = region.id
     params.regionName = region.name
@@ -498,7 +491,7 @@ export struct MusicFeast {
   }
 
   @Builder
-  renderRegionCard(item: HeritageRegionType) {
+  renderRegionCard(item: HeritageRegionItem) {
     Stack({ alignContent: Alignment.Bottom }) {
       Image(item.cover as ResourceStr)
         .width('100%')
@@ -537,17 +530,7 @@ export struct MusicFeast {
 
   // 响应式布局配置
   private getColumnsCount(): string {
-    let screenWidth = 360 // 默认手机宽度
-    if (globalThis.displayInfo && globalThis.displayInfo.width) {
-      screenWidth = px2vp(globalThis.displayInfo.width)
-    }
-    if (screenWidth >= 1200) {
-      return '1fr 1fr 1fr 1fr' // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return '1fr 1fr 1fr' // 平板
-    } else {
-      return '1fr 1fr' // 手机
-    }
+    return resolveByScreenWidth(getScreenWidthVp(), '1fr 1fr', '1fr 1fr 1fr', '1fr 1fr 1fr 1fr')
   }
 
   build() {
@@ -585,11 +568,11 @@ export struct MusicFeast {
 
       // 卡片网格
       Grid() {
-        ForEach(this.regionList, (item: HeritageRegionType) => {
+        ForEach(this.regionList, (item: HeritageRegionItem) => {
           GridItem() {
             this.renderRegionCard(item)
           }
-        }, (item: HeritageRegionType) => item.id)
+        }, (item: HeritageRegionItem) => item.id)
       }
       .columnsTemplate(this.getColumnsCount())
       .rowsGap(8)

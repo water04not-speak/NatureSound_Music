@@ -3,6 +3,7 @@
 import { it } from "@ohos/hypium"
 import { AppStorageV2 } from '@kit.ArkUI'
 import { ThemeState } from '../models/theme'
+import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils'
 import common from '@ohos.app.ability.common'
 
 interface recommendDailyType {
@@ -104,40 +105,19 @@ export struct Recommend {
 
   // 响应式布局配置
   private getScreenWidth(): number {
-    return px2vp(globalThis.displayInfo?.width || 360)
+    return getScreenWidthVp()
   }
 
   private getSwiperAspectRatio(): number {
-    let screenWidth = this.getScreenWidth()
-    if (screenWidth >= 1200) {
-      return 3.0 // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return 2.5 // 平板
-    } else {
-      return 2.2 // 手机
-    }
+    return resolveByScreenWidth(this.getScreenWidth(), 2.2, 2.5, 3.0)
   }
 
   private getDailyRecommendWidth(): string {
-    let screenWidth = this.getScreenWidth()
-    if (screenWidth >= 1200) {
-      return '22%' // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return '28%' // 平板
-    } else {
-      return '40%' // 手机
-    }
+    return resolveByScreenWidth(this.getScreenWidth(), '40%', '28%', '22%')
   }
 
   private getRecommendListWidth(): string {
-    let screenWidth = this.getScreenWidth()
-    if (screenWidth >= 1200) {
-      return '18%' // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return '23%' // 平板
-    } else {
-      return '30%' // 手机
-    }
+    return resolveByScreenWidth(this.getScreenWidth(), '30%', '23%', '18%')
   }
 
   @Builder

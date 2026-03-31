@@ -6,6 +6,7 @@
     "**/src/ohosTest/**/*",
     "**/src/test/**/*",
     "**/src/mock/**/*",
+    "**/src/main/ets/utils/AvPlayerManager.ets",
     "**/node_modules/**/*",
     "**/oh_modules/**/*",
     "**/build/**/*",

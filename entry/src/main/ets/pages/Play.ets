@@ -3,6 +3,7 @@ import { SongItemType } from "../models/music"
 import { AppStorageV2 } from "@kit.ArkUI"
 import { playManager } from "../utils/AvPlayerManager"
 import { ThemeState } from "../models/theme"
+import { getScreenHeightVp, getScreenWidthVp, resolveByScreenHeight, resolveByScreenWidth } from '../utils/ScreenUtils'
 
 // 跳转页面入口函数
 @Builder
@@ -357,7 +358,7 @@ struct Play {
   ]
   // 当前播放的歌曲
   @Local
-  playState:GlobalMusic=AppStorageV2.connect(GlobalMusic,'SONG_KEY',()=>new GlobalMusic())!
+  playState:GlobalMusic=playManager.currentSong
   themeState: ThemeState = AppStorageV2.connect(ThemeState, 'THEME_STATE', () => new ThemeState())!
 
   aboutToAppear() {
@@ -415,55 +416,27 @@ struct Play {
 
   // 响应式布局配置
   private getScreenWidth(): number {
-    return 360 // 默认值，避免使用可能不存在的API
+    return getScreenWidthVp()
   }
 
   private getScreenHeight(): number {
-    return 640 // 默认值，避免使用可能不存在的API
+    return getScreenHeightVp()
   }
 
   private getRecordSize(): number {
-    let screenWidth = this.getScreenWidth()
-    if (screenWidth >= 1200) {
-      return 500 // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return 400 // 平板
-    } else {
-      return 300 // 手机
-    }
+    return resolveByScreenWidth(this.getScreenWidth(), 300, 400, 500)
   }
 
   private getStylusSize(): number {
-    let screenWidth = this.getScreenWidth()
-    if (screenWidth >= 1200) {
-      return 300 // 2in1或大屏幕
-    } else if (screenWidth >= 800) {
-      return 250 // 平板
-    } else {
-      return 200 // 手机
-    }
+    return resolveByScreenWidth(this.getScreenWidth(), 200, 250, 300)
   }
 
   private getTopMargin(): number {
-    let screenHeight = this.getScreenHeight()
-    if (screenHeight >= 1000) {
-      return 120 // 大屏幕
-    } else if (screenHeight >= 800) {
-      return 80 // 平板
-    } else {
-      return 50 // 手机
-    }
+    return resolveByScreenHeight(this.getScreenHeight(), 50, 80, 120)
   }
 
   private getPanelHeight(): string {
-    let screenHeight = this.getScreenHeight()
-    if (screenHeight >= 1000) {
-      return '70%' // 大屏幕
-    } else if (screenHeight >= 800) {
-      return '65%' // 平板
-    } else {
-      return '60%' // 手机
-    }
+    return resolveByScreenHeight(this.getScreenHeight(), '60%', '65%', '70%')
   }
 
   // 滚动相关属性
@@ -817,7 +790,7 @@ struct Play {
                   .onScroll((_x: number, y: number) => {
                     this.scrollPosition = y
                     this.showScrollTopButton = y > 100
-                    this.showScrollBottomButton = y < (this.playState.playList.length * 60 - this.getScreenHeight() * 0.6)
+                    this.showScrollBottomButton = y < Math.max(0, this.playState.playList.length * 60 - this.getScreenHeight() * 0.6)
                   })
                 } else {
                   // 不需要滚动时的普通列表

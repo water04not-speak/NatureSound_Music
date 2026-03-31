@@ -4,6 +4,7 @@ import { AppStorageV2 } from '@kit.ArkUI'
 import { SongItemType } from '../models/music'
 import { playManager } from '../utils/AvPlayerManager'
 import { ThemeState } from '../models/theme'
+import { getScreenHeightVp, getScreenWidthVp, resolveByScreenHeight, resolveByScreenWidth } from '../utils/ScreenUtils'
 
 // 地域参数类
 export class HeritageRegionParams {
@@ -127,27 +128,11 @@ struct HeritageRegionDetail {
 
   // 响应式布局配置
   private getHeaderHeight(): number {
-    let screenHeight = 640 // 默认手机高度
-    if (globalThis.displayInfo && globalThis.displayInfo.height) {
-      screenHeight = px2vp(globalThis.displayInfo.height)
-    }
-    if (screenHeight >= 800) {
-      return 320 // 大屏幕
-    } else {
-      return 280 // 手机
-    }
+    return resolveByScreenHeight(getScreenHeightVp(), 280, 320, 320)
   }
 
   private getCoverSize(): number {
-    let screenWidth = 360 // 默认手机宽度
-    if (globalThis.displayInfo && globalThis.displayInfo.width) {
-      screenWidth = px2vp(globalThis.displayInfo.width)
-    }
-    if (screenWidth >= 800) {
-      return 140 // 大屏幕
-    } else {
-      return 120 // 手机
-    }
+    return resolveByScreenWidth(getScreenWidthVp(), 120, 140, 140)
   }
 
   build() {
