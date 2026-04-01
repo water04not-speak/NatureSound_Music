@@ -4,6 +4,7 @@ import { AppStorageV2 } from "@kit.ArkUI"
 import { playManager } from "../utils/AvPlayerManager"
 import { ThemeState } from "../models/theme"
 import { getScreenHeightVp, getScreenWidthVp, resolveByScreenHeight, resolveByScreenWidth } from '../utils/ScreenUtils'
+import { Lyric } from './Lyric'
 
 // 跳转页面入口函数
 @Builder
@@ -213,7 +214,22 @@ struct Play {
       name:'同花顺',
       author:'en（王翊恩）',
       url:'http://music.163.com/song/media/outer/url?id=2709706245.mp3',
-      id:'0027'
+      id:'0027',
+      lyrics: [
+        '同花顺 - en(王翊恩)',
+        '词：小寒',
+        '曲：林俊杰',
+        '原唱：林俊杰',
+        '...',
+        '要是你心里真没我',
+        '你不会剪去了长发',
+        '闪动如蝴蝶在双颊',
+        '那是眼泪吗',
+        '要是你心里真有我',
+        '你不会嘴边无火花',
+        '要是彼此都说实话',
+        '同花顺会赢吗'
+      ]
     },
     {
       img:"https://tse1-mm.cn.bing.net/th/id/OIP-C.7D2qL-1OoZ1foMTd05W3kwHaHa?w=177&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3",
@@ -583,8 +599,9 @@ struct Play {
 
   build() {
     NavDestination() {
-      Stack() {
-                  // �黯ר������
+      Swiper() {
+        Stack() {
+                  // 背景图片
           Image(this.playState.img)
             .width('100%')
             .height('100%')
@@ -804,16 +821,30 @@ struct Play {
           .layoutWeight(1)
           .width('100%')
         }
+        .width('100%')
+        .height('100%')
+      } // Close Stack
 
-        
-      }
-      .width('100%')
-      .height('100%')
-    }
-    .onReady((context: NavDestinationContext) => {
+      // 歌词页面
+      Lyric({
+        swiperIndex: this.swiperIndex,
+        onBack: () => {
+          this.swiperIndex = 0
+        }
+      })
+    } // Close Swiper
+    .index($$this.swiperIndex)
+    .indicator(false)
+    .loop(false)
+    .width('100%')
+    .height('100%')
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+  } // Close NavDestination
+  .onReady((context: NavDestinationContext) => {
       this.pathStack = context.pathStack
     })
-    .hideTitleBar(true)
+  .hideTitleBar(true)
+  .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
       .bindSheet($$this.isShowPlaylist, this.PlaylistBuilder(), { height: SheetSize.MEDIUM, dragBar: true, backgroundColor: this.themeState.getCardBackgroundColor(), showClose: true })
   }
 }

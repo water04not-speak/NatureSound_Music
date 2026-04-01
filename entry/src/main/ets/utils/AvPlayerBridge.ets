@@ -4,10 +4,19 @@ import { SongItemType } from '../models/music'
 import { sessionManager } from './AvSessionManager'
 import { currentSong as sharedCurrentSong } from './PlaybackState'
 
+/**
+ * AvPlayerBridge 类
+ * 提供了与媒体播放器（AvPlayer）的桥接接口，用于初始化播放器、加载并在不同歌曲之间切换。
+ */
 class AvPlayerBridge {
   player: media.AVPlayer | null = null
   currentSong: GlobalMusic = sharedCurrentSong
+  private lastStateUpdateTime: number = 0
 
+  /**
+   * 初始化媒体播放器
+   * @returns Promise<void>
+   */
   async init(): Promise<void> {
     if (!this.player) {
       try {
@@ -53,7 +62,12 @@ class AvPlayerBridge {
 
     this.player.on('timeUpdate', (time) => {
       this.currentSong.time = time
-      sessionManager.setAVPlayBackState()
+      // 降低 AVSession 状态更新频率，避免 IPC 频繁调用导致性能卡顿
+      const now = Date.now()
+      if (!this.lastStateUpdateTime || now - this.lastStateUpdateTime > 1000) {
+        sessionManager.setAVPlayBackState()
+        this.lastStateUpdateTime = now
+      }
     })
   }
 
