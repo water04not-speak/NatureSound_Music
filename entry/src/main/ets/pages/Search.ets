@@ -7,6 +7,7 @@ import { defaultMusicSeeds } from '../utils/MusicSeedData'
 import { buildSearchHintPool, pickRandomSearchHint } from '../utils/SearchHintUtils'
 import { GlobalMusic } from '../models/globalMusic'
 import common from '@ohos.app.ability.common'
+import dataPreferences from '@ohos.data.preferences'
 
 @Builder
 export function SearchBuilder() {
@@ -36,6 +37,9 @@ export struct SearchPage {
   playState: GlobalMusic = playManager.currentSong
   private searchHintPool: string[] = []
   private searchHintTimer?: number
+  private historyPrefs: dataPreferences.Preferences | null = null
+  private readonly historyStoreName: string = 'searchHistoryStore'
+  private readonly historyKey: string = 'search_history_v1'
 
   private vipSongIdSet: Set<string> = new Set<string>([
     '0001', '0003', '0006', '0007', '0013', '0029', '0030', '0032', '0046'
@@ -119,6 +123,44 @@ export struct SearchPage {
     }
   }
 
+  private async ensureHistoryPrefs(): Promise<void> {
+    if (this.historyPrefs) {
+      return
+    }
+    const abilityCtx = getContext(this) as common.UIAbilityContext
+    this.historyPrefs = await dataPreferences.getPreferences(abilityCtx, this.historyStoreName)
+  }
+
+  private async loadSearchHistory(): Promise<void> {
+    try {
+      await this.ensureHistoryPrefs()
+      const raw = await this.historyPrefs?.get(this.historyKey, '[]') as string
+      const parsed = JSON.parse(raw) as string[]
+      if (!Array.isArray(parsed)) {
+        this.searchHistory = []
+        return
+      }
+      this.searchHistory = parsed
+        .map((item: string) => item.trim())
+        .filter((item: string) => item.length > 0)
+        .slice(0, 10)
+    } catch (error) {
+      this.searchHistory = []
+      console.error('[Search] Failed to load search history:', JSON.stringify(error))
+    }
+  }
+
+  private async persistSearchHistory(): Promise<void> {
+    try {
+      await this.ensureHistoryPrefs()
+      const payload = JSON.stringify(this.searchHistory.slice(0, 10))
+      await this.historyPrefs?.put(this.historyKey, payload)
+      await this.historyPrefs?.flush()
+    } catch (error) {
+      console.error('[Search] Failed to persist search history:', JSON.stringify(error))
+    }
+  }
+
   private initSearchHintRotation(): void {
     this.searchHintPool = buildSearchHintPool(defaultMusicSeeds)
     this.searchHint = pickRandomSearchHint(this.searchHintPool, '搜索歌曲、歌手')
@@ -143,6 +185,7 @@ export struct SearchPage {
     const abilityCtx = getContext(this) as common.UIAbilityContext
     void this.themeState.initFromContext(abilityCtx)
     void this.initSongs()
+    void this.loadSearchHistory()
     this.initSearchHintRotation()
   }
 
@@ -171,6 +214,7 @@ export struct SearchPage {
           if (this.searchHistory.length > 10) {
             this.searchHistory.pop()
           }
+          void this.persistSearchHistory()
         }
       } catch (error) {
         console.error('[Search] Failed to search songs:', JSON.stringify(error))
@@ -183,6 +227,7 @@ export struct SearchPage {
 
   private clearHistory(): void {
     this.searchHistory = []
+    void this.persistSearchHistory()
   }
 
   private openSong(item: SongItemType): void {

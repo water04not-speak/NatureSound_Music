@@ -6,11 +6,12 @@ import { musicRepository } from '../utils/MusicRepository'
 import { playManager } from '../utils/AvPlayerManager'
 import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils'
 import common from '@ohos.app.ability.common'
+import { getDefaultSongItems } from '../utils/MusicSeedData'
 
 @ComponentV2
 export struct Find {
   playState: GlobalMusic = playManager.currentSong
-  @Local private songs: SongItemType[] = []
+  @Local private songs: SongItemType[] = getDefaultSongItems()
   @Local private isLoading: boolean = true
   @Local private favoriteOnly: boolean = false
   @Local private errorText: string = ''

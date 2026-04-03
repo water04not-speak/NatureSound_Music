@@ -1,10 +1,12 @@
-// 非遗之声专区 - 地域非遗文化展示
+// 声宴专区 - 多板块音乐展示
 
 import { AppStorageV2 } from '@kit.ArkUI'
 import { ThemeState } from '../models/theme'
 import { HeritageRegionParams } from './HeritageRegionDetail'
 import { SongItemType } from '../models/music'
 import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils'
+import { getDefaultSongItems } from '../utils/MusicSeedData'
+import { getHeritageSongsByRegionId } from '../utils/HeritageMusicData'
 import common from '@ohos.app.ability.common'
 
 // 地域卡片类型
@@ -26,6 +28,18 @@ export function MusicFeastBuilder() {
 export struct MusicFeast {
   themeState: ThemeState = AppStorageV2.connect(ThemeState, 'THEME_STATE', () => new ThemeState())!
   pathStack: NavPathStack = AppStorageV2.connect(NavPathStack, 'navStack', () => new NavPathStack())!
+  private readonly songPool: SongItemType[] = getDefaultSongItems()
+
+  private readonly regionFallbackIds: Record<string, string[]> = {
+    'yangtze-delta': ['h000', 'h003', 'h005'],
+    'guangdong-hk-macao': ['h007', 'h008', 'h012'],
+    'chengdu-chongqing': ['h013', 'h015', 'h016'],
+    'yangtze-mid': ['h017', 'h018', 'h019'],
+    'ancient-style': ['0007', '0029', '0030', '0031', '0032', '0033', '0034', '0035', '0046'],
+    'modern-style': ['0000', '0001', '0002', '0003', '0004', '0005', '0006', '0008', '0009', '0010', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0020', '0021', '0023', '0024', '0025', '0026', '0027', '0028', '0036', '0037', '0038', '0040', '0041', '0042', '0043', '0044', '0045', '0047'],
+    'wuxia-style': ['0019', '0030', '0039'],
+    'folk-style': ['0000', '0036', '0038']
+  }
 
   // 地域音乐数据
   @Local private regionList: HeritageRegionItem[] = [
@@ -36,11 +50,11 @@ export struct MusicFeast {
       description: '江南丝竹、评弹小调、昆曲选段',
       songs: [
         {
-          img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.6cVHkHcjY27leNEticrH4QHaHa?w=203&h=203&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-          name: '迷雾',
-          author: '吴子健REmi',
-          url: 'http://music.163.com/song/media/outer/url?id=3329325495.mp3',
-          id: '0015'
+          img: 'https://picsum.photos/seed/h000/320/320',
+          name: '欢乐歌',
+          author: '民乐',
+          url: 'https://music.163.com/song/media/outer/url?id=5259247.mp3',
+          id: 'h000'
         }
       ]
     },
@@ -51,11 +65,11 @@ export struct MusicFeast {
       description: '广府粤曲、粤语童谣、醒狮鼓点',
       songs: [
         {
-          img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.hnGq0kOiFyAgNrW3ufiq0wHaC4?w=240&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-          name: '紫荆花盛开 ',
-          author: '李荣浩,梁咏琪',
-          url: 'http://music.163.com/song/media/outer/url?id=1959528822.mp3',
-          id: '0010'
+          img: 'https://picsum.photos/seed/h007/320/320',
+          name: '分飞燕',
+          author: '群星',
+          url: 'https://music.163.com/song/media/outer/url?id=5282935.mp3',
+          id: 'h007'
         }
       ]
     },
@@ -66,11 +80,11 @@ export struct MusicFeast {
       description: '川剧念白、川剧鼓点音效',
       songs: [
         {
-          img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.6cVHkHcjY27leNEticrH4QHaHa?w=203&h=203&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-          name: '迷雾',
-          author: '吴子健REmi',
-          url: 'http://music.163.com/song/media/outer/url?id=3329325495.mp3',
-          id: '0015'
+          img: 'https://picsum.photos/seed/h015/320/320',
+          name: '川剧·贵妃醉酒',
+          author: '群星',
+          url: 'https://music.163.com/song/media/outer/url?id=5266402.mp3',
+          id: 'h015'
         }
       ]
     },
@@ -81,11 +95,11 @@ export struct MusicFeast {
       description: '楚调湘音、黄梅戏选段',
       songs: [
         {
-          img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.6cVHkHcjY27leNEticrH4QHaHa?w=203&h=203&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-          name: '迷雾',
-          author: '吴子健REmi',
-          url: 'http://music.163.com/song/media/outer/url?id=3329325495.mp3',
-          id: '0015'
+          img: 'https://picsum.photos/seed/h019/320/320',
+          name: '女驸马',
+          author: '韩再芬',
+          url: 'https://music.163.com/song/media/outer/url?id=1501412078.mp3',
+          id: 'h019'
         }
       ]
     },
@@ -480,6 +494,62 @@ export struct MusicFeast {
     }
   ]
 
+  private normalizeSongUrl(url: string): string {
+    if (url.startsWith('http://music.163.com/')) {
+      return 'https://' + url.substring('http://'.length)
+    }
+    return url
+  }
+
+  private ensurePlayableSong(song: SongItemType): SongItemType {
+    const out: SongItemType = {
+      img: song.img,
+      name: song.name,
+      author: song.author,
+      url: this.normalizeSongUrl(song.url),
+      id: song.id,
+      title: song.title,
+      singer: song.singer,
+      cover: song.cover,
+      lyric: song.lyric,
+      isFavorite: song.isFavorite,
+      createTime: song.createTime,
+      lyrics: song.lyrics,
+      lyricLines: song.lyricLines
+    }
+    return out
+  }
+
+  /**
+   * 【通俗解释】优先用卡片自带歌单；如果太少，就从总歌池补齐，避免“点进分区没歌”的体验。
+   */
+  private resolveRegionSongs(region: HeritageRegionItem): SongItemType[] {
+    const unique: Record<string, SongItemType> = {}
+
+    const heritageSongs = getHeritageSongsByRegionId(region.id)
+    for (const song of heritageSongs) {
+      unique[song.id] = this.ensurePlayableSong(song)
+    }
+
+    const baseSongs = region.songs ?? []
+    for (const song of baseSongs) {
+      unique[song.id] = this.ensurePlayableSong(song)
+    }
+
+    const fallbackIds = this.regionFallbackIds[region.id] ?? []
+    for (const id of fallbackIds) {
+      if (unique[id]) {
+        continue
+      }
+      const found = this.songPool.find((song: SongItemType) => song.id === id)
+      if (found) {
+        unique[id] = this.ensurePlayableSong(found)
+      }
+    }
+
+    return Object.values(unique)
+  }
+
   // 点击地域卡片，跳转到详情
   private handleRegionClick(region: HeritageRegionItem): void {
     const params = AppStorageV2.connect(HeritageRegionParams, 'heritageRegionParams', () => new HeritageRegionParams())!
@@ -487,6 +557,7 @@ export struct MusicFeast {
     params.regionName = region.name
     params.regionCover = region.cover
     params.regionDescription = region.description
+    params.songs = this.resolveRegionSongs(region)
     this.pathStack.pushPathByName('HeritageRegionDetail', null, false)
   }
 
@@ -559,7 +630,7 @@ export struct MusicFeast {
       .justifyContent(FlexAlign.Start)
 
       // 简介区域
-      Text('聆听山河古韵，传承千年声脉。一方水土一方歌，让非遗音乐在数字时代生生不息。')
+      Text('聆听山河古韵，传承千年声脉。一方水土一方歌，让多元音乐在数字时代生生不息。')
         .fontSize(14)
         .fontColor(this.themeState.getSecondaryTextColor())
         .width('100%')

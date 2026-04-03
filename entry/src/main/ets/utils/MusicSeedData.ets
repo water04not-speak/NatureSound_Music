@@ -1,4 +1,13 @@
 import { MusicSongSeed } from '../models/musicDb'
+import { findLyricBySongId } from './LyricDictionary'
+import { heritageSeedSongs } from './HeritageMusicData'
+
+function normalizeSeedUrl(url: string): string {
+  if (url.startsWith('http://music.163.com/')) {
+    return 'https://' + url.substring('http://'.length)
+  }
+  return url
+}
 
 export const defaultMusicSeeds: MusicSongSeed[] = [
   {
@@ -26,7 +35,7 @@ export const defaultMusicSeeds: MusicSongSeed[] = [
     id: '0003',
     title: 'LOST BOY',
     singer: 'Troye Sivan',
-    url: 'http://music.163.com/song/media/outer/url?id=37988002.mp3',
+    url: 'https://music.163.com/song/media/outer/url?id=3358682441.mp3',
     cover: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.S6-SPRMftLydAsbrGxMnKgHaHa?w=206&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2'
   },
   {
@@ -109,8 +118,8 @@ export const defaultMusicSeeds: MusicSongSeed[] = [
   {
     id: '0015',
     title: '迷雾',
-    singer: '吴子健REmi',
-    url: 'http://music.163.com/song/media/outer/url?id=3329325495.mp3',
+    singer: 'TC',
+    url: 'https://music.163.com/song/media/outer/url?id=2026544587.mp3',
     cover: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.6cVHkHcjY27leNEticrH4QHaHa?w=203&h=203&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3'
   },
   {
@@ -337,11 +346,42 @@ export const defaultMusicSeeds: MusicSongSeed[] = [
     url: 'http://music.163.com/song/media/outer/url?id=2656135242.mp3',
     cover: 'https://tse3-mm.cn.bing.net/th/id/OIP-C.kUVSnw26NXrhSyFD0b-sWQHaGv?w=171&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3'
   },
-  {
-    id: '0048',
-    title: 'Black Veil Bride',
-    singer: 'Rosy赵露思',
-    url: 'http://music.163.com/song/media/outer/url?id=3312557251.mp3',
-    cover: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.KKrjA3kLTJU_2OlW2MUoLQHaHa?w=190&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2'
-  }
+  
 ]
+
+for (const seed of heritageSeedSongs) {
+  defaultMusicSeeds.push(seed)
+}
+
+/**
+ * 【通俗解释】这个类就是“给页面直接用的歌曲卡片结构”。
+ * 数据库里的字段名和页面展示字段名不完全一致，
+ * 所以这里做一次统一，避免每个页面都重复转换。
+ */
+export class SongItem {
+  img: string;
+  name: string;
+  author: string;
+  url: string;
+  id: string;
+  lyric?: string;
+  constructor(img: string, name: string, author: string, url: string, id: string, lyric?: string) {
+    this.img = img;
+    this.name = name;
+    this.author = author;
+    this.url = url;
+    this.id = id;
+    this.lyric = lyric;
+  }
+}
+
+export function getDefaultSongItems(): SongItem[] {
+  /**
+   * 【通俗解释】统一把流地址规范到 https，并且歌词只走词典按 ID 取值。
+   * 这样既能减少播放器被 http 拦截，也避免只有个别歌曲使用内嵌歌词导致数据不一致。
+   */
+  return defaultMusicSeeds.map((s: MusicSongSeed) => {
+    const resolvedLyric = findLyricBySongId(s.id)
+    return new SongItem(s.cover, s.title, s.singer, normalizeSeedUrl(s.url), s.id, resolvedLyric)
+  })
+}

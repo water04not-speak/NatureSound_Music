@@ -4,6 +4,7 @@ import { ThemeState } from '../models/theme'
 import { UserState } from '../models/user'
 import { CommunityState } from '../models/community'
 import common from '@ohos.app.ability.common'
+import { getDefaultSongItems } from '../utils/MusicSeedData'
 
 /**
  * 歌曲项类型
@@ -80,122 +81,7 @@ export struct Moment {
   communityState: CommunityState = AppStorageV2.connect(CommunityState, 'COMMUNITY_STATE', () => new CommunityState())!
   
   // 歌曲数据列表
-  private readonly songs: SongItemType[] = [
-    {
-      img: 'https://ts2.tc.mm.bing.net/th/id/OIP-C.S0lemtICbjqpaSpjD1X5fgHaHa?w=200&h=200&c=12&rs=1&p=0&o=6&dpr=1.5&pid=23.1',
-      name: '吹梦到西洲',
-      author: '恋恋故人难,黄诗扶,王敬轩（妖扬）',
-      url: 'http://music.163.com/song/media/outer/url?id=1376873330.mp3',
-      id: '0000'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.0reb7d1pRce8SAm-AiHyjAHaHa?w=207&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: '孤独患者',
-      author: '杜宣达',
-      url: 'http://music.163.com/song/media/outer/url?id=2642002866.mp3',
-      id: '0001'
-    },
-    {
-      img:'https://tse4-mm.cn.bing.net/th/id/OIP-C.X-8rIiiyDZkw8PXJaLdeigAAAA?w=224&h=147&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name:'告白',
-      author:'沈以诚',
-      url:'http://music.163.com/song/media/outer/url?id=1336856449.mp3',
-      id: '0002'
-    },
-    {
-      img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.VuIUZtzmpXgromK5aXymdAHaHa?w=163&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '两 难',
-      author: '加木',
-      url: 'http://music.163.com/song/media/outer/url?id=2163210456.mp3',
-      id: '0003'
-    },
-    {
-      img: 'https://img3.kuwo.cn/star/albumcover/500/s4s61/83/1393076434.jpg',
-      name: '给未来的自己',
-      author: '余翊',
-      url: 'http://music.163.com/song/media/outer/url?id=3327521028.mp3',
-      id: '0004'
-    },
-    {
-      img: 'https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/c8/c4/fa/c8c4fa47-55d8-b5ba-96e5-4b7de76b18e3/cover.jpg/1200x630wp-60.jpg',
-      name: '戒断反应',
-      author: '赵政豪',
-      url: 'http://music.163.com/song/media/outer/url?id=2600442564.mp3',
-      id: '0005'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.S6-SPRMftLydAsbrGxMnKgHaHa?w=206&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: 'LOST BOY',
-      author: 'Troye Sivan',
-      url: 'http://music.163.com/song/media/outer/url?id=37988002.mp3',
-      id: '0006'
-    },
-    {
-      img: 'https://tse3-mm.cn.bing.net/th/id/OIP-C.du5HkZPRv8NeBiI8lyTe2gHaCu?w=343&h=128&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '消愁',
-      author: '毛不易',
-      url: 'http://music.163.com/song/media/outer/url?id=569200213.mp3',
-      id: '0007'
-    },
-    {
-      img: 'https://ts1.tc.mm.bing.net/th/id/OIP-C.hnGq0kOiFyAgNrW3ufiq0wHaC4?w=240&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name: '紫荆花盛开 ',
-      author: '李荣浩,梁咏琪',
-      url: 'http://music.163.com/song/media/outer/url?id=1959528822.mp3',
-      id: '0008'
-    },
-    {
-      img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.6cVHkHcjY27leNEticrH4QHaHa?w=203&h=203&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name: '迷雾',
-      author: '吴子健REmi',
-      url: 'http://music.163.com/song/media/outer/url?id=3329325495.mp3',
-      id: '0009'
-    },
-    {
-      img:'https://tse4-mm.cn.bing.net/th/id/OIP-C.DbFschoMC4D56w-hISUNKwAAAA?w=188&h=188&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name:'霜月遥 - イノチの灯し方 (生命的点燃方式)',
-      author:'霜月瑶',
-      url:'http://music.163.com/song/media/outer/url?id=473403622.mp3',
-      id: '0010'
-    },
-    {
-      img:'https://tse3-mm.cn.bing.net/th/id/OIP-C.XCD3rC-U3JB5VemZf1NC1gHaEK?w=285&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name:'春日影',
-      author:'CRYCHIC',
-      url:'http://music.163.com/song/media/outer/url?id=2154464431.mp3',
-      id: '0011'
-    },
-    {
-      img:'https://ts1.tc.mm.bing.net/th/id/OIP-C.bkXzlU64xLuz4OR9A4mJdwAAAA?w=160&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name:'像雾',
-      author:'徐秉龙',
-      url:'http://music.163.com/song/media/outer/url?id=1941323235.mp3',
-      id: '0012'
-    },
-    {
-      img:'https://ts1.tc.mm.bing.net/th/id/OIP-C.KTyTNlQIovW5FKx1e-N_vgHaHa?w=194&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name:'出山',
-      author:'花粥,王胜娚',
-      url:'http://music.163.com/song/media/outer/url?id=1313354324.mp3',
-      id: '0013'
-    },
-    {
-      img:'https://ts1.tc.mm.bing.net/th/id/OIP-C.GVsvj4J7mH4y5W-nJkY9XwAAAA?w=207&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.5&pid=3.1&rm=2',
-      name:'shall we talk.',
-      author:'8bite',
-      url:'http://music.163.com/song/media/outer/url?id=1986510161.mp3',
-      id: '0014'
-    },
-    {
-      img:'https://tse2-mm.cn.bing.net/th/id/OIP-C.61af9pSkqIrYBNohjSPBrAHaHa?w=170&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3',
-      name:'越来越不懂（Cover 蔡健雅）',
-      author:'青尢',
-      url:'http://music.163.com/song/media/outer/url?id=498311468.mp3',
-      id: '0015'
-    }
-  ]
-
-  // 动态可变的已展示列表
+  private readonly songs: SongItemType[] = getDefaultSongItems()
   @Local private momentList: MomentListType[] = []
   // 全量数据源
   private allMoments: MomentListType[] = []
@@ -1046,7 +932,7 @@ export struct Moment {
         Row() {
           TextInput({
             placeholder: '写评论...',
-            text: $$this.newCommentText
+            text: this.newCommentText
           })
             .backgroundColor(Color.Transparent)
             .fontSize(14)

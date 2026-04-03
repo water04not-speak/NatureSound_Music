@@ -105,14 +105,6 @@
       }
     },
     {
-      "name": "Record",
-      "pageSourceFile": "src/main/ets/pages/Record.ets",
-      "buildFunction": "RecordBuilder",
-      "data": {
-        "description": "this is Record"
-      }
-    },
-    {
       "name": "HeritageRegionDetail",
       "pageSourceFile": "src/main/ets/pages/HeritageRegionDetail.ets",
       "buildFunction": "HeritageRegionDetailBuilder",

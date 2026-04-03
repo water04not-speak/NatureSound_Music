@@ -3,6 +3,8 @@ import { GlobalMusic } from '../models/globalMusic'
 import { SongItemType } from '../models/music'
 import { sessionManager } from './AvSessionManager'
 import { currentSong as sharedCurrentSong } from './PlaybackState'
+import { downloadManager } from './DownloadManager'
+import { playbackSnapshotStore } from './PlaybackSnapshotStore'
 
 /**
  * AvPlayerBridge 类
@@ -12,6 +14,31 @@ class AvPlayerBridge {
   player: media.AVPlayer | null = null
   currentSong: GlobalMusic = sharedCurrentSong
   private lastStateUpdateTime: number = 0
+  private canFallbackToRemote: boolean = false
+  private remoteFallbackTried: boolean = false
+  private remoteFallbackUrl: string = ''
+  private currentPlayerUrl: string = ''
+  private lastSnapshotAt: number = 0
+
+  /**
+   * 【通俗解释】很多曲库外链是 http，部分设备/网络策略会拦截明文流。
+   * 这里统一改成 https，尽量减少“明明有歌却播不出来”的情况。
+   */
+  private normalizeStreamUrl(url: string): string {
+    if (!url) {
+      return ''
+    }
+    if (url.includes('id=37988002')) {
+      return 'https://music.163.com/song/media/outer/url?id=3358682441.mp3'
+    }
+    if (url.includes('id=3329325495')) {
+      return 'https://music.163.com/song/media/outer/url?id=2026544587.mp3'
+    }
+    if (url.startsWith('http://music.163.com/')) {
+      return 'https://' + url.substring('http://'.length)
+    }
+    return url
+  }
 
   /**
    * 初始化媒体播放器
@@ -35,21 +62,45 @@ class AvPlayerBridge {
       } else if (state === 'prepared') {
         this.player?.play()
         this.currentSong.isPlay = true
+        void playbackSnapshotStore.save(this.currentSong)
       } else if (state === 'completed') {
         this.nextPlay(true)
       } else if (state === 'released') {
+        this.currentPlayerUrl = ''
         this.currentSong.reset()
       } else if (state === 'error') {
-        console.error(`[AvPlayerBridge] 播放器错误，当前URL: ${this.currentSong.url}`)
-        this.currentSong.isPlay = false
-        sessionManager.setAVPlayBackState()
+        void this.tryRemoteFallbackOnError()
+          .then((recovered: boolean) => {
+            if (recovered) {
+              return
+            }
+            console.error(`[AvPlayerBridge] 播放器错误，当前URL: ${this.currentSong.url}`)
+            this.currentSong.isPlay = false
+            sessionManager.setAVPlayBackState()
+          })
+          .catch((e: Error) => {
+            console.error('[AvPlayerBridge] 远程回退异常:', e)
+            this.currentSong.isPlay = false
+            sessionManager.setAVPlayBackState()
+          })
       }
     })
 
     this.player.on('error', (error) => {
-      console.error(`[AvPlayerBridge] 播放错误: code=${error.code}, message=${error.message}, url=${this.currentSong.url}`)
-      this.currentSong.isPlay = false
-      sessionManager.setAVPlayBackState()
+      void this.tryRemoteFallbackOnError()
+        .then((recovered: boolean) => {
+          if (recovered) {
+            return
+          }
+          console.error(`[AvPlayerBridge] 播放错误: code=${error.code}, message=${error.message}, url=${this.currentSong.url}`)
+          this.currentSong.isPlay = false
+          sessionManager.setAVPlayBackState()
+        })
+        .catch((e: Error) => {
+          console.error('[AvPlayerBridge] 远程回退异常:', e)
+          this.currentSong.isPlay = false
+          sessionManager.setAVPlayBackState()
+        })
     })
 
     this.player.on('durationUpdate', (duration) => {
@@ -68,6 +119,11 @@ class AvPlayerBridge {
         sessionManager.setAVPlayBackState()
         this.lastStateUpdateTime = now
       }
+      // 进度落盘做节流，避免高频写入引起 I/O 压力。
+      if (!this.lastSnapshotAt || now - this.lastSnapshotAt > 3000) {
+        void playbackSnapshotStore.save(this.currentSong)
+        this.lastSnapshotAt = now
+      }
     })
   }
 
@@ -84,13 +140,16 @@ class AvPlayerBridge {
     sessionManager.setAVPlayBackState()
 
     const inList = this.currentSong.playList.some(item => item.id === song.id)
+    const normalizedSongUrl = this.normalizeStreamUrl(song.url)
+    const canPlayDirectly = this.currentSong.url === normalizedSongUrl && this.currentPlayerUrl.length > 0
     console.info(`[AvPlayerBridge] 歌曲是否在列表中: ${inList}`)
     if (inList) {
-      if (this.currentSong.url === song.url) {
+      if (canPlayDirectly) {
         console.info('[AvPlayerBridge] 播放同一首歌曲，直接播放')
         this.player?.play()
         this.currentSong.isPlay = true
         console.info(`[AvPlayerBridge] 播放状态已更新: ${this.currentSong.isPlay}`)
+        void playbackSnapshotStore.save(this.currentSong)
       } else {
         console.info('[AvPlayerBridge] 切换到列表中的其他歌曲')
         this.currentSong.playIndex = this.currentSong.playList.findIndex(item => item.id === song.id)
@@ -116,6 +175,7 @@ class AvPlayerBridge {
     const idx = playList.findIndex((item: SongItemType) => item.id === song.id)
     this.currentSong.playList = [...playList]
     this.currentSong.playIndex = idx >= 0 ? idx : 0
+    void playbackSnapshotStore.save(this.currentSong)
     this.changeSong()
   }
 
@@ -150,17 +210,79 @@ class AvPlayerBridge {
       this.currentSong.img = song.img
       this.currentSong.name = song.name
       this.currentSong.author = song.author
-      this.currentSong.url = song.url
+      this.currentSong.url = this.normalizeStreamUrl(song.url)
+      this.currentSong.id = song.id
+      this.currentSong.isFavorite = song.isFavorite
+      this.currentSong.lyric = song.lyric
+      this.currentSong.lyrics = song.lyrics
+      this.currentSong.lyricLines = song.lyricLines || []
+    
+      if (!this.currentSong.lyricLines.length && song.lyric) {
+        try {
+          const lyricsParser = await import('./lyricsParser')
+          this.currentSong.lyricLines = lyricsParser.parseLRC(song.lyric)
+          if (!this.currentSong.lyricLines.length) {
+            this.currentSong.lyrics = song.lyric
+              .split(/\r?\n/)
+              .map((line: string) => line.trim())
+              .filter((line: string) => line.length > 0)
+          }
+        } catch (e) {
+          console.error('[AvPlayerBridge] Failed to parse LRC: ', e)
+        }
+      }
 
-      const urlPreview = song.url.length > 100 ? `${song.url.substring(0, 100)}...` : song.url
+      let playUrl = this.normalizeStreamUrl(song.url)
+      this.canFallbackToRemote = false
+      this.remoteFallbackTried = false
+      this.remoteFallbackUrl = this.normalizeStreamUrl(song.url)
+      try {
+        const downloaded = await downloadManager.isDownloaded(song.id)
+        if (downloaded) {
+          const localPath = await downloadManager.getLocalPath(song.id)
+          if (localPath && localPath.trim().length > 0) {
+            playUrl = localPath
+            this.canFallbackToRemote = true
+            console.info(`[AvPlayerBridge] 使用离线文件播放: ${song.name}`)
+          }
+        }
+      } catch (error) {
+        console.error('[AvPlayerBridge] 离线路径检查失败，回退网络播放:', JSON.stringify(error))
+      }
+
+      const urlPreview = playUrl.length > 100 ? `${playUrl.substring(0, 100)}...` : playUrl
       console.info(`[AvPlayerBridge] 设置播放URL: ${urlPreview}, 歌曲: ${song.name}`)
 
-      this.player.url = song.url
+      this.player.url = playUrl
+      this.currentPlayerUrl = playUrl
       console.info('[AvPlayerBridge] URL已设置，等待播放器初始化...')
+      void playbackSnapshotStore.save(this.currentSong)
     } catch (error) {
       console.error('[AvPlayerBridge] 切换歌曲失败:', error)
       this.currentSong.isPlay = false
       sessionManager.setAVPlayBackState()
+    }
+  }
+
+  private async tryRemoteFallbackOnError(): Promise<boolean> {
+    if (!this.player) {
+      return false
+    }
+    if (!this.canFallbackToRemote || this.remoteFallbackTried || !this.remoteFallbackUrl) {
+      return false
+    }
+
+    this.remoteFallbackTried = true
+    try {
+      console.info(`[AvPlayerBridge] 本地文件播放失败，回退远程流: ${this.remoteFallbackUrl}`)
+      await this.player.reset()
+      this.currentPlayerUrl = ''
+      this.player.url = this.remoteFallbackUrl
+      this.currentPlayerUrl = this.remoteFallbackUrl
+      return true
+    } catch (error) {
+      console.error('[AvPlayerBridge] 远程回退失败:', error)
+      return false
     }
   }
 
@@ -185,6 +307,8 @@ class AvPlayerBridge {
     this.currentSong.isPlay = false
     console.info(`[AvPlayerBridge] 暂停状态已更新: ${this.currentSong.isPlay}`)
     sessionManager.setAVPlayBackState()
+    void playbackSnapshotStore.save(this.currentSong)
+    void sessionManager.stopBackgroundTask()
   }
 
   prevPlay(): void {
@@ -252,6 +376,10 @@ class AvPlayerBridge {
   }
 
   async release(): Promise<void> {
+    this.currentSong.isPlay = false
+    this.currentPlayerUrl = ''
+    void playbackSnapshotStore.save(this.currentSong)
+    void sessionManager.stopBackgroundTask()
     await this.player?.release()
   }
 }

@@ -4,6 +4,7 @@ import { SongItemType } from '../models/music'
 import { MusicSongEntity, MusicSongSeed } from '../models/musicDb'
 import { MusicDatabase } from './MusicDatabase'
 import { musicDatabase } from './MusicDatabase'
+import { findLyricBySongId } from './LyricDictionary'
 
 export class MusicRepository {
   private seedPromise?: Promise<void>
@@ -21,20 +22,26 @@ export class MusicRepository {
       try {
         const store = await musicDatabase.getStore(context)
         const count = await this.getCount(store)
-        if (count > 0 || seeds.length === 0) {
+        if (seeds.length === 0) {
+          return
+        }
+
+        if (count > 0) {
+          await this.reconcileSeedData(store, seeds)
           return
         }
 
         const baseTime = Date.now() - seeds.length
         for (let index = 0; index < seeds.length; index++) {
           const seed = seeds[index]
+          const resolvedLyric = this.resolveSeedLyric(seed)
           await this.insertSongInternal(store, {
             id: seed.id,
             title: seed.title,
             singer: seed.singer,
             url: seed.url,
             cover: seed.cover,
-            lyric: seed.lyric ?? '',
+            lyric: resolvedLyric,
             isFavorite: 0,
             createTime: baseTime + index
           })
@@ -48,6 +55,73 @@ export class MusicRepository {
     })
 
     return this.seedPromise
+  }
+
+  private async reconcileSeedData(store: relationalStore.RdbStore, seeds: MusicSongSeed[]): Promise<void> {
+    const seedIdSet: Set<string> = new Set(seeds.map((seed: MusicSongSeed) => seed.id))
+    const baseTime = Date.now() - seeds.length
+    let index = 0
+    for (const seed of seeds) {
+      const resolvedLyric = this.resolveSeedLyric(seed)
+      const current = await this.queryOne(store, seed.id)
+
+      if (!current) {
+        await this.insertSongInternal(store, {
+          id: seed.id,
+          title: seed.title,
+          singer: seed.singer,
+          url: seed.url,
+          cover: seed.cover,
+          lyric: resolvedLyric,
+          isFavorite: 0,
+          createTime: baseTime + index
+        })
+        index++
+        continue
+      }
+
+      const nextLyric = resolvedLyric
+      const shouldUpdate = current.title !== seed.title
+        || current.singer !== seed.singer
+        || current.url !== seed.url
+        || current.cover !== seed.cover
+        || current.lyric !== nextLyric
+
+      if (!shouldUpdate) {
+        continue
+      }
+
+      await this.updateSongInternal(store, {
+        id: current.id,
+        title: seed.title,
+        singer: seed.singer,
+        url: seed.url,
+        cover: seed.cover,
+        lyric: nextLyric,
+        isFavorite: current.isFavorite,
+        createTime: current.createTime
+      })
+    }
+
+    // 清理历史残留：删除不在当前种子列表中的旧歌曲，避免脏数据混入播放列表。
+    const allSongs = await this.queryAll(store)
+    for (const song of allSongs) {
+      if (!seedIdSet.has(song.id)) {
+        await this.deleteByIdInternal(store, song.id)
+      }
+    }
+  }
+
+  /**
+   * 【通俗解释】优先使用种子里写死的歌词；没有时用歌曲ID去词典查。
+   * 这样即使数据库是老数据，也能在补齐时拿到正确歌词。
+   */
+  private resolveSeedLyric(seed: MusicSongSeed): string {
+    const primary = seed.lyric?.trim()
+    if (primary && primary.length > 0) {
+      return seed.lyric!
+    }
+    return findLyricBySongId(seed.id) ?? ''
   }
 
   async getAllSongs(context: common.UIAbilityContext): Promise<SongItemType[]> {
@@ -155,13 +229,14 @@ export class MusicRepository {
       const baseTime = Date.now() - songs.length
       let index = 0
       for (const song of songs) {
+        const resolvedLyric = this.resolveSeedLyric(song)
         await this.insertOrReplace(store, {
           id: song.id,
           title: song.title,
           singer: song.singer,
           url: song.url,
           cover: song.cover,
-          lyric: song.lyric ?? '',
+          lyric: resolvedLyric,
           isFavorite: 0,
           createTime: baseTime + index
         })
@@ -274,6 +349,12 @@ export class MusicRepository {
       return await this.updateSongInternal(store, song)
     }
     return await this.insertSongInternal(store, song)
+  }
+
+  private async deleteByIdInternal(store: relationalStore.RdbStore, id: string): Promise<number> {
+    const predicates = new relationalStore.RdbPredicates(MusicDatabase.TABLE_NAME)
+    predicates.equalTo('id', id)
+    return await store.delete(predicates)
   }
 
   private readResultSet(resultSet: relationalStore.ResultSet): MusicSongEntity[] {

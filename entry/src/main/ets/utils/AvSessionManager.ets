@@ -9,8 +9,11 @@ import { playerBridge } from './AvPlayerBridge'
 class AvSessionManager{
   session:avSession.AVSession | null =null
   playState:GlobalMusic=sharedCurrentSong//不为空时等号赋值
+  private context: Context | null = null
+  private isBackgroundTaskStarted: boolean = false
 
   async init(content:Context){
+    this.context = content
      this.session =await avSession.createAVSession(content,'bgPlay','audio')
     this.registerEvent()
   }
@@ -18,6 +21,12 @@ class AvSessionManager{
 
 //   申请长时任务
   async startBackgroundTask(){
+    if (this.isBackgroundTaskStarted) {
+      return
+    }
+    if (!this.context) {
+      return
+    }
     let wantAgentInfo: wantAgent.WantAgentInfo = {
       // 点击通知后，将要执行的动作列表
       // 添加需要被拉起应用的bundleName和abilityName
@@ -39,7 +48,21 @@ class AvSessionManager{
       // extraInfo: { [backgroundTaskManager.BackgroundModeType.SUB_MODE] : backgroundTaskManager.BackgroundSubMode.CAR_KEY }
     };
     const want=await wantAgent.getWantAgent(wantAgentInfo)
-    await backgroundTaskManager.startBackgroundRunning(getContext(),backgroundTaskManager.BackgroundMode.AUDIO_PLAYBACK,want)
+    await backgroundTaskManager.startBackgroundRunning(this.context,backgroundTaskManager.BackgroundMode.AUDIO_PLAYBACK,want)
+    this.isBackgroundTaskStarted = true
+  }
+
+  async stopBackgroundTask(){
+    if (!this.isBackgroundTaskStarted || !this.context) {
+      return
+    }
+    try {
+      await backgroundTaskManager.stopBackgroundRunning(this.context)
+    } catch (_error) {
+      // stopBackgroundRunning 可能在任务已失效时抛错，这里忽略并继续释放会话
+    } finally {
+      this.isBackgroundTaskStarted = false
+    }
   }
 
 //   设置元数据
@@ -92,7 +115,9 @@ class AvSessionManager{
 
 //注销会话
   async destroy(){
+    await this.stopBackgroundTask()
     await this.session?.destroy()
+    this.session = null
   }
 
 }
