@@ -89,6 +89,62 @@
       }
     },
     {
+      "name": "BackgroundSettings",
+      "pageSourceFile": "src/main/ets/pages/BackgroundSettings.ets",
+      "buildFunction": "BackgroundSettingsBuilder",
+      "data": {
+        "description": "更换背景"
+      }
+    },
+    {
+      "name": "AccountSecurity",
+      "pageSourceFile": "src/main/ets/pages/AccountSecurity.ets",
+      "buildFunction": "AccountSecurityBuilder",
+      "data": {
+        "description": "账号与安全"
+      }
+    },
+    {
+      "name": "PlaySettings",
+      "pageSourceFile": "src/main/ets/pages/PlaySettings.ets",
+      "buildFunction": "PlaySettingsBuilder",
+      "data": {
+        "description": "播放设置"
+      }
+    },
+    {
+      "name": "DownloadSettings",
+      "pageSourceFile": "src/main/ets/pages/DownloadSettings.ets",
+      "buildFunction": "DownloadSettingsBuilder",
+      "data": {
+        "description": "下载设置"
+      }
+    },
+    {
+      "name": "NotificationSettings",
+      "pageSourceFile": "src/main/ets/pages/NotificationSettings.ets",
+      "buildFunction": "NotificationSettingsBuilder",
+      "data": {
+        "description": "通知设置"
+      }
+    },
+    {
+      "name": "AboutUs",
+      "pageSourceFile": "src/main/ets/pages/AboutUs.ets",
+      "buildFunction": "AboutUsBuilder",
+      "data": {
+        "description": "关于我们"
+      }
+    },
+    {
+      "name": "VersionInfo",
+      "pageSourceFile": "src/main/ets/pages/VersionInfo.ets",
+      "buildFunction": "VersionInfoBuilder",
+      "data": {
+        "description": "版本信息"
+      }
+    },
+    {
       "name": "Help",
       "pageSourceFile": "src/main/ets/pages/Help.ets",
       "buildFunction": "HelpBuilder",

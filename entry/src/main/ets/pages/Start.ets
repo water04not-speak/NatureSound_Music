@@ -12,11 +12,29 @@ export function StartBuilder() {
 struct Start {
   // 控制跳转的对象 - 使用共享的 NavPathStack
   pathStack: NavPathStack = AppStorageV2.connect(NavPathStack, 'navStack', () => new NavPathStack())!
+  private splashTimer?: number
+  private hasNavigated: boolean = false
   // 过三秒自动跳转到 Layout -> Start 页面打开计时 3秒后跳转
   aboutToAppear(): void { //生命周期
-    setTimeout(()=>{
-      this.pathStack.replacePathByName("Layout", null, false)
-    },3000) // 不支持返回的跳转页面， 1000毫秒=1秒
+    this.hasNavigated = false
+    if (this.splashTimer !== undefined) {
+      clearTimeout(this.splashTimer)
+    }
+    this.splashTimer = setTimeout(() => {
+      if (this.hasNavigated) {
+        return
+      }
+      this.hasNavigated = true
+      this.pathStack.replacePathByName('Layout', null, false)
+    }, 3000) // 不支持返回的跳转页面， 1000毫秒=1秒
+
+  }
+
+  aboutToDisappear(): void {
+    if (this.splashTimer !== undefined) {
+      clearTimeout(this.splashTimer)
+      this.splashTimer = undefined
+    }
 
   }
 

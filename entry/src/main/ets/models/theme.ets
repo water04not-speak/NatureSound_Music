@@ -328,6 +328,14 @@ export class ThemeState {
   }
 
   /**
+   * 获取品牌强调色
+   * 兼容部分页面的旧命名
+   */
+  getBrandColor(): string {
+    return this.currentTheme.iconColor
+  }
+
+  /**
    * 获取当前卡片背景颜色
    * @returns 卡片背景颜色值
    */

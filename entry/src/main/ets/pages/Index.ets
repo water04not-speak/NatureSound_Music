@@ -56,15 +56,8 @@ struct Index {
       this.hasNavigated = true
       this.isInitializing = false
       
-      // 根据登录状态决定跳转
-      // 如果已登录，直接跳转到Layout；否则跳转到Start（启动页）
-      if (this.userState.isLoggedIn) {
-        // 已登录，直接进入主界面
-        this.pathStack.pushPathByName("Layout", null, false)
-      } else {
-        // 未登录，显示启动页
-        this.pathStack.pushPathByName("Start", null, false)
-      }
+      // 启动时统一先进入广告页，再由广告页定时跳转到主界面
+      this.pathStack.pushPathByName("Start", null, false)
     }).catch((error: Error) => {
       console.error('Failed to initialize app state:', error)
       this.isInitializing = false

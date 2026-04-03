@@ -305,6 +305,7 @@ export struct Recommend {
           this.initSearchHintRotation()
         })
         .onDisAppear(() => {
+          this.searchHint = '搜索音乐'
           this.stopSearchHintRotation()
         })
     }

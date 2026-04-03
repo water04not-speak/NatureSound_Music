@@ -408,7 +408,7 @@ struct Play {
             width: { bottom: 1 },
             color: this.themeState.getDividerColor()
           })
-        })
+        }, (item: SongItemType) => item.id)
       }
       .width('100%')
       .height('100%')

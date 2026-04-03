@@ -3,6 +3,11 @@ import { AppStorageV2 } from '@kit.ArkUI'
 import { ThemeState } from '../models/theme'
 import common from '@ohos.app.ability.common'
 
+// 协议页共享参数，避免路由时直接传对象字面量
+export class TermsParams {
+  initialTab: 'terms' | 'privacy' = 'terms'
+}
+
 @Builder
 export function TermsBuilder() {
   Terms()
@@ -14,6 +19,7 @@ export struct Terms {
   
   pathStack: NavPathStack = new NavPathStack()
   themeState: ThemeState = AppStorageV2.connect(ThemeState, 'THEME_STATE', () => new ThemeState())!
+  paramsState: TermsParams = AppStorageV2.connect(TermsParams, 'TERMS_PARAMS', () => new TermsParams())!
   
   build() {
     NavDestination() {
@@ -22,24 +28,25 @@ export struct Terms {
         Row({ space: 0 }) {
           Text('用户协议')
             .fontSize(16)
-            .fontWeight(FontWeight.Medium)
-            .fontColor(this.currentTab === 'terms' ? this.themeState.getPrimaryTextColor() : this.themeState.getSecondaryTextColor())
-            .padding({ left: 20, right: 20, top: 12, bottom: 12 })
+            .fontWeight(this.currentTab === 'terms' ? FontWeight.Bold : FontWeight.Medium)
+            .fontColor(this.currentTab === 'terms' ? this.themeState.getBrandColor() : this.themeState.getSecondaryTextColor())
+            .padding({ left: 32, right: 32, top: 16, bottom: 16 })
             .onClick(() => {
               this.currentTab = 'terms'
             })
           
           Text('隐私政策')
             .fontSize(16)
-            .fontWeight(FontWeight.Medium)
-            .fontColor(this.currentTab === 'privacy' ? this.themeState.getPrimaryTextColor() : this.themeState.getSecondaryTextColor())
-            .padding({ left: 20, right: 20, top: 12, bottom: 12 })
+            .fontWeight(this.currentTab === 'privacy' ? FontWeight.Bold : FontWeight.Medium)
+            .fontColor(this.currentTab === 'privacy' ? this.themeState.getBrandColor() : this.themeState.getSecondaryTextColor())
+            .padding({ left: 32, right: 32, top: 16, bottom: 16 })
             .onClick(() => {
               this.currentTab = 'privacy'
             })
         }
         .width('100%')
         .justifyContent(FlexAlign.Center)
+        .backgroundColor(this.themeState.getCardBackgroundColor())
         
         // 分割线
         Divider()
@@ -72,6 +79,11 @@ export struct Terms {
       void this.themeState.initFromContext(abilityCtx)
     })
     .title('用户协议与隐私政策')
+  }
+
+  aboutToAppear() {
+    // 每次进入页面时同步外部设定的默认标签
+    this.currentTab = this.paramsState.initialTab
   }
   
   @Builder

@@ -85,6 +85,8 @@ export struct Moment {
   @Local private momentList: MomentListType[] = []
   // 全量数据源
   private allMoments: MomentListType[] = []
+  private sortedMomentsCache: MomentListType[] = []
+  private sortedMomentsCacheMode: SortMode = 'latest'
   private pageIndex: number = 0
   private readonly pageSize: number = 5
   @Local private hasMore: boolean = true
@@ -350,19 +352,28 @@ export struct Moment {
   }
 
   private getSortedAllMoments(): MomentListType[] {
+    if (this.sortedMomentsCacheMode === this.momentSortMode && this.sortedMomentsCache.length === this.allMoments.length) {
+      return this.sortedMomentsCache
+    }
+
     const list = this.allMoments.slice()
     if (this.momentSortMode === 'hot') {
-      return list.sort((a: MomentListType, b: MomentListType) => {
+      list.sort((a: MomentListType, b: MomentListType) => {
         if (b.like !== a.like) return b.like - a.like
         return b.createdAt - a.createdAt
       })
+    } else {
+      list.sort((a: MomentListType, b: MomentListType) => b.createdAt - a.createdAt)
     }
-    return list.sort((a: MomentListType, b: MomentListType) => b.createdAt - a.createdAt)
+
+    this.sortedMomentsCacheMode = this.momentSortMode
+    this.sortedMomentsCache = list
+    return this.sortedMomentsCache
   }
 
   private refreshDisplayedMoments(): void {
-    const displayedCount = this.momentList.length
     const sorted = this.getSortedAllMoments()
+    const displayedCount = this.momentList.length
     this.momentList = sorted.slice(0, displayedCount)
     this.hasMore = displayedCount < sorted.length
   }
@@ -371,6 +382,7 @@ export struct Moment {
     this.pageIndex = 0
     this.momentList = []
     this.hasMore = true
+    this.sortedMomentsCache = []
     this.loadMore()
   }
 
@@ -430,6 +442,8 @@ export struct Moment {
 
     // 应用保存的状态数据（点赞、评论等）
     this.allMoments = this.communityState.applySavedStates(this.allMoments)
+    this.sortedMomentsCache = []
+    this.sortedMomentsCacheMode = this.momentSortMode
 
     // 首次加载一页
     this.loadMore()
@@ -750,7 +764,7 @@ export struct Moment {
           Image($r('app.media.ic_dz'))
             .width(18)
             .height(18)
-            .fillColor(item.liked ? Moment.LIKE_ACTIVE_COLOR : this.getLikeInactiveColor())
+            .fillColor(item.liked === true ? Moment.LIKE_ACTIVE_COLOR : this.getLikeInactiveColor())
             .scale({
               x: (this.likeAnimationStates.get(item.id) ?? false) ? 1.3 : 1.0,
               y: (this.likeAnimationStates.get(item.id) ?? false) ? 1.3 : 1.0
@@ -761,7 +775,7 @@ export struct Moment {
             })
           Text(`${item.like}`)
             .fontSize(13)
-            .fontColor(item.liked ? Moment.LIKE_ACTIVE_COLOR : this.getLikeInactiveColor())
+            .fontColor(item.liked === true ? Moment.LIKE_ACTIVE_COLOR : this.getLikeInactiveColor())
             .opacity((this.likeAnimationStates.get(item.id) ?? false) ? 0.7 : 1.0)
             .animation({
               duration: 200,
@@ -770,7 +784,7 @@ export struct Moment {
         }
         .padding({ left: 12, right: 12, top: 8, bottom: 8 })
         .borderRadius(20)
-        .backgroundColor(item.liked ? 'rgba(47, 128, 255, 0.1)' : 'transparent')
+        .backgroundColor(item.liked === true ? 'rgba(47, 128, 255, 0.1)' : 'transparent')
         .opacity((this.likeAnimationStates.get(item.id) ?? false) ? 0.8 : 1.0)
         .animation({
           duration: 150,
@@ -919,7 +933,7 @@ export struct Moment {
               this.renderCommentItem(this.activeMomentId, c)
               Divider().strokeWidth(1).color(this.themeState.getDividerColor()).opacity(0.6)
             }
-          }, (c: CommentItemType, index: number) => `${c.id}-${c.like}-${c.liked}`)
+          }, (c: CommentItemType, index: number) => c.id)
         }
         .edgeEffect(EdgeEffect.None)
         .layoutWeight(1)
@@ -1040,7 +1054,7 @@ export struct Moment {
               ListItem() {
                 this.renderMomentItem(item)
               }
-            }, (item: MomentListType, _idx: number): string => `${item.id}-${item.like}-${item.liked}`)
+              }, (item: MomentListType, _idx: number): string => item.id)
 
             ListItem() {
               if (this.hasMore) {

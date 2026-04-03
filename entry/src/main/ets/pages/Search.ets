@@ -37,6 +37,8 @@ export struct SearchPage {
   playState: GlobalMusic = playManager.currentSong
   private searchHintPool: string[] = []
   private searchHintTimer?: number
+  private searchDebounceTimer?: number
+  private searchRequestSeq: number = 0
   private historyPrefs: dataPreferences.Preferences | null = null
   private readonly historyStoreName: string = 'searchHistoryStore'
   private readonly historyKey: string = 'search_history_v1'
@@ -86,6 +88,32 @@ export struct SearchPage {
   private checkFavorite(songId: string, fallback: boolean | undefined): boolean {
     const song = this.searchResults.find((s: SongItemType) => s.id === songId)
     return song ? (song.isFavorite === true) : (fallback === true)
+  }
+
+  private cancelPendingSearch(): void {
+    if (this.searchDebounceTimer !== undefined) {
+      clearTimeout(this.searchDebounceTimer)
+      this.searchDebounceTimer = undefined
+    }
+  }
+
+  private scheduleSearch(keyword: string): void {
+    const normalized = keyword.trim()
+    this.searchText = keyword
+
+    this.cancelPendingSearch()
+
+    if (!normalized) {
+      this.searchResults = []
+      this.isSearching = false
+      return
+    }
+
+    this.isSearching = true
+    const requestSeq = ++this.searchRequestSeq
+    this.searchDebounceTimer = setTimeout(() => {
+      void this.performSearch(normalized, requestSeq)
+    }, 180)
   }
 
   private updateFavoriteState(itemId: string, isFavorite: boolean): void {
@@ -191,9 +219,10 @@ export struct SearchPage {
 
   aboutToDisappear() {
     this.stopSearchHintRotation()
+    this.cancelPendingSearch()
   }
 
-  private performSearch(keyword: string): void {
+  private async performSearch(keyword: string, requestSeq: number = ++this.searchRequestSeq): Promise<void> {
     const normalized = keyword.trim()
     if (!normalized) {
       this.searchResults = []
@@ -202,27 +231,32 @@ export struct SearchPage {
     }
 
     this.isSearching = true
-    this.searchText = normalized
+    try {
+      const abilityCtx = getContext(this) as common.UIAbilityContext
+      const result = await musicRepository.searchSongs(abilityCtx, normalized, 30, 0)
+      if (requestSeq !== this.searchRequestSeq) {
+        return
+      }
 
-    setTimeout(async () => {
-      try {
-        const abilityCtx = getContext(this) as common.UIAbilityContext
-        this.searchResults = await musicRepository.searchSongs(abilityCtx, normalized, 50, 0)
+      this.searchResults = result
 
-        if (!this.searchHistory.includes(normalized)) {
-          this.searchHistory.unshift(normalized)
-          if (this.searchHistory.length > 10) {
-            this.searchHistory.pop()
-          }
-          void this.persistSearchHistory()
+      if (!this.searchHistory.includes(normalized)) {
+        this.searchHistory.unshift(normalized)
+        if (this.searchHistory.length > 10) {
+          this.searchHistory.pop()
         }
-      } catch (error) {
+        void this.persistSearchHistory()
+      }
+    } catch (error) {
+      if (requestSeq === this.searchRequestSeq) {
         console.error('[Search] Failed to search songs:', JSON.stringify(error))
         this.searchResults = []
-      } finally {
+      }
+    } finally {
+      if (requestSeq === this.searchRequestSeq) {
         this.isSearching = false
       }
-    }, 120)
+    }
   }
 
   private clearHistory(): void {
@@ -268,11 +302,11 @@ export struct SearchPage {
             .fontSize(15)
             .onSubmit(() => {
               if (this.searchText && this.searchText.trim()) {
-                this.performSearch(this.searchText.trim())
+                void this.performSearch(this.searchText.trim())
               }
             })
             .onChange((value: string) => {
-              this.searchText = value
+              this.scheduleSearch(value)
             })
 
           if (this.searchText) {
