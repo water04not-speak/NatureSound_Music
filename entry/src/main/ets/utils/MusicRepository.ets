@@ -1,14 +1,24 @@
 import common from '@ohos.app.ability.common'
 import relationalStore from '@ohos.data.relationalStore'
+// 音乐类型定义
 import { SongItemType } from '../models/music'
+// 数据库实体类型
 import { MusicSongEntity, MusicSongSeed } from '../models/musicDb'
 import { MusicDatabase } from './MusicDatabase'
 import { musicDatabase } from './MusicDatabase'
+// 歌词字典工具
 import { findLyricBySongId } from './LyricDictionary'
 
+/**
+ * 音乐数据仓库类
+ * 封装歌曲数据的增删改查操作，提供统一的数据访问接口
+ */
 export class MusicRepository {
   private seedPromise?: Promise<void>
 
+  /**
+   * 初始化数据库连接
+   */
   async init(context: common.UIAbilityContext): Promise<void> {
     await musicDatabase.getStore(context)
   }

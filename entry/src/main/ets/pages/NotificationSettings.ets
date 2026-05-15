@@ -1,12 +1,21 @@
+// 全局状态管理模块
 import { AppStorageV2 } from '@kit.ArkUI'
+// 主题状态管理模块
 import { ThemeState } from '../models/theme'
 import common from '@ohos.app.ability.common'
 
+/**
+ * NotificationSettings 页面构建器
+ */
 @Builder
 export function NotificationSettingsBuilder() {
   NotificationSettings()
 }
 
+/**
+ * 通知设置页面组件
+ * 控制应用消息、互动提醒和播放相关通知
+ */
 @ComponentV2
 export struct NotificationSettings {
   pathStack: NavPathStack = new NavPathStack()

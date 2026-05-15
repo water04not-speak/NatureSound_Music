@@ -1,19 +1,30 @@
 // 手机号登录页面
+// 全局状态管理模块
 import { AppStorageV2 } from '@kit.ArkUI'
 import common from '@ohos.app.ability.common'
+// 用户状态管理模块
 import { UserState } from '../models/user'
+// 主题状态管理模块
 import { ThemeState } from '../models/theme'
 
+// 登录表单数据接口
 interface PhoneLoginFormData {
   phone: string
   code: string
 }
 
+/**
+ * PhoneLogin 页面构建器
+ */
 @Builder
 export function PhoneLoginBuilder() {
   PhoneLogin()
 }
 
+/**
+ * 手机号登录页面组件
+ * 提供手机号验证码登录功能
+ */
 @ComponentV2
 export struct PhoneLogin {
   @Local formData: PhoneLoginFormData = {
@@ -31,18 +42,27 @@ export struct PhoneLogin {
   
   private timerId: number | undefined = undefined
   
+  /**
+   * 组件即将消失时清理定时器
+   */
   aboutToDisappear(): void {
     if (this.timerId !== undefined) {
       clearInterval(this.timerId)
     }
   }
   
-  // 验证手机号格式
+  /**
+   * 验证手机号格式
+   * @param phone 手机号
+   * @returns 是否为有效手机号
+   */
   private isValidPhone(phone: string): boolean {
     return /^1[3-9]\d{9}$/.test(phone)
   }
   
-  // 发送验证码（模拟）
+  /**
+   * 发送验证码（模拟实现）
+   */
   private sendCode(): void {
     if (!this.formData.phone) {
       this.errorMessage = '请输入手机号'
@@ -72,11 +92,12 @@ export struct PhoneLogin {
     this.timerId = intervalId as number
     
     // 模拟验证码（实际应从服务器获取）
-    // 这里为了演示，可以提示用户验证码
     console.info('[PhoneLogin] 模拟验证码：123456（实际应从服务器获取）')
   }
   
-  // 手机号登录
+  /**
+   * 处理手机号登录
+   */
   private handlePhoneLogin(): void {
     this.errorMessage = ''
     
@@ -101,7 +122,6 @@ export struct PhoneLogin {
     }
     
     // 模拟验证（实际应调用服务器验证）
-    // 这里为了演示，接受任意6位数字
     this.isLogging = true
     
     // 模拟登录请求
@@ -111,7 +131,7 @@ export struct PhoneLogin {
       const success = this.userState.loginWithPhone(this.formData.phone)
       
       if (success) {
-        // 登录成功，返回Layout
+        // 登录成功，返回主页
         this.pathStack.clear()
         this.pathStack.replacePathByName('Layout', null, false)
       } else {

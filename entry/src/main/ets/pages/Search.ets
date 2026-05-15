@@ -1,19 +1,35 @@
+// 全局状态管理模块
 import { AppStorageV2 } from '@kit.ArkUI'
+// 主题状态管理模块
 import { ThemeState } from '../models/theme'
+// 音乐数据类型定义
 import { SongItemType } from '../models/music'
+// 播放管理器
 import { playManager } from '../utils/AvPlayerManager'
+// 音乐数据仓库
 import { musicRepository } from '../utils/MusicRepository'
+// 音乐种子数据
 import { defaultMusicSeeds } from '../utils/MusicSeedData'
+// 搜索提示工具函数
 import { buildSearchHintPool, pickRandomSearchHint } from '../utils/SearchHintUtils'
+// 全局音乐状态管理
 import { GlobalMusic } from '../models/globalMusic'
 import common from '@ohos.app.ability.common'
+// 数据偏好存储
 import dataPreferences from '@ohos.data.preferences'
 
+/**
+ * SearchPage 页面构建器
+ */
 @Builder
 export function SearchBuilder() {
   SearchPage()
 }
 
+/**
+ * 搜索页面组件
+ * 提供音乐搜索、搜索历史和热门搜索功能
+ */
 @ComponentV2
 export struct SearchPage {
   @Local searchText: string = ''
@@ -90,6 +106,9 @@ export struct SearchPage {
     return song ? (song.isFavorite === true) : (fallback === true)
   }
 
+  /**
+   * 取消待处理的搜索请求
+   */
   private cancelPendingSearch(): void {
     if (this.searchDebounceTimer !== undefined) {
       clearTimeout(this.searchDebounceTimer)
@@ -97,6 +116,9 @@ export struct SearchPage {
     }
   }
 
+  /**
+   * 调度搜索（带防抖）
+   */
   private scheduleSearch(keyword: string): void {
     const normalized = keyword.trim()
     this.searchText = keyword
@@ -139,6 +161,9 @@ export struct SearchPage {
     })
   }
 
+  /**
+   * 初始化歌曲数据
+   */
   private async initSongs(): Promise<void> {
     const abilityCtx = getContext(this) as common.UIAbilityContext
     this.isLoading = true
@@ -151,6 +176,9 @@ export struct SearchPage {
     }
   }
 
+  /**
+   * 确保搜索历史存储已初始化
+   */
   private async ensureHistoryPrefs(): Promise<void> {
     if (this.historyPrefs) {
       return
@@ -159,6 +187,9 @@ export struct SearchPage {
     this.historyPrefs = await dataPreferences.getPreferences(abilityCtx, this.historyStoreName)
   }
 
+  /**
+   * 加载搜索历史
+   */
   private async loadSearchHistory(): Promise<void> {
     try {
       await this.ensureHistoryPrefs()
@@ -178,6 +209,9 @@ export struct SearchPage {
     }
   }
 
+  /**
+   * 持久化搜索历史
+   */
   private async persistSearchHistory(): Promise<void> {
     try {
       await this.ensureHistoryPrefs()
@@ -189,6 +223,9 @@ export struct SearchPage {
     }
   }
 
+  /**
+   * 初始化搜索提示轮播
+   */
   private initSearchHintRotation(): void {
     this.searchHintPool = buildSearchHintPool(defaultMusicSeeds)
     this.searchHint = pickRandomSearchHint(this.searchHintPool, '搜索歌曲、歌手')
@@ -202,6 +239,9 @@ export struct SearchPage {
     }, 2600)
   }
 
+  /**
+   * 停止搜索提示轮播
+   */
   private stopSearchHintRotation(): void {
     if (this.searchHintTimer !== undefined) {
       clearInterval(this.searchHintTimer)

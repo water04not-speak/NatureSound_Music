@@ -1,6 +1,10 @@
 import common from '@ohos.app.ability.common'
 import relationalStore from '@ohos.data.relationalStore'
 
+/**
+ * 音乐数据库管理类
+ * 封装RDB数据库操作，提供歌曲数据的持久化存储
+ */
 export class MusicDatabase {
   static readonly DB_NAME: string = 'nature_sound_music.rdb'
   static readonly TABLE_NAME: string = 'music_songs'
@@ -8,6 +12,9 @@ export class MusicDatabase {
   private store?: relationalStore.RdbStore
   private initPromise?: Promise<relationalStore.RdbStore>
 
+  /**
+   * 获取数据库存储实例（单例模式）
+   */
   async getStore(context: common.UIAbilityContext): Promise<relationalStore.RdbStore> {
     if (this.store) {
       return this.store

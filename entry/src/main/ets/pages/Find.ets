@@ -1,13 +1,25 @@
+// 全局状态管理模块
 import { AppStorageV2 } from '@kit.ArkUI'
+// 全局音乐状态管理
 import { GlobalMusic } from '../models/globalMusic'
+// 主题状态管理模块
 import { ThemeState } from '../models/theme'
+// 音乐数据类型定义
 import { SongItemType } from '../models/music'
+// 音乐数据仓库
 import { musicRepository } from '../utils/MusicRepository'
+// 播放管理器
 import { playManager } from '../utils/AvPlayerManager'
+// 屏幕工具函数
 import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils'
 import common from '@ohos.app.ability.common'
+// 默认歌曲数据
 import { getDefaultSongItems } from '../utils/MusicSeedData'
 
+/**
+ * Find 页面组件 - 发现音乐页面
+ * 展示音乐列表、播放控制和收藏功能
+ */
 @ComponentV2
 export struct Find {
   playState: GlobalMusic = playManager.currentSong
@@ -89,6 +101,9 @@ export struct Find {
     return this.withAlpha(this.getActiveAccentColor(), alpha)
   }
 
+  /**
+   * 初始化歌曲列表
+   */
   private async initSongs(): Promise<void> {
     const abilityCtx = getContext(this) as common.UIAbilityContext
     this.isLoading = true
@@ -104,6 +119,9 @@ export struct Find {
     }
   }
 
+  /**
+   * 重新加载歌曲列表
+   */
   private async reloadSongs(): Promise<void> {
     const abilityCtx = getContext(this) as common.UIAbilityContext
     try {
@@ -119,11 +137,17 @@ export struct Find {
     }
   }
 
+  /**
+   * 打开播放页面并播放指定歌曲
+   */
   private openSong(item: SongItemType): void {
     this.pathStack.pushPathByName('Play', null, false)
     playManager.singPlayFromList(item, this.songs)
   }
 
+  /**
+   * 更新歌曲收藏状态
+   */
   private updateFavoriteState(itemId: string, isFavorite: boolean): void {
     this.songs = this.songs.map((song: SongItemType) => {
       if (song.id !== itemId) {
@@ -148,11 +172,17 @@ export struct Find {
     })
   }
 
+  /**
+   * 检查歌曲是否被收藏
+   */
   private checkFavorite(songId: string, fallback: boolean | undefined): boolean {
     const song = this.songs.find((s: SongItemType) => s.id === songId)
     return song ? (song.isFavorite === true) : (fallback === true)
   }
 
+  /**
+   * 切换歌曲收藏状态
+   */
   private async toggleFavorite(item: SongItemType): Promise<void> {
     const abilityCtx = getContext(this) as common.UIAbilityContext
     const currentItem = this.songs.find((s: SongItemType) => s.id === item.id) ?? item
@@ -371,6 +401,85 @@ export struct Find {
         .layoutWeight(1)
         .scrollBar(BarState.Off)
         .padding({ bottom: 12 })
+      }
+
+      // 底部播放横条
+      if (this.playState.name) {
+        Row({ space: 16 }) {
+          Image(this.playState.img)
+            .width(62)
+            .height(62)
+            .borderRadius(10)
+            .objectFit(ImageFit.Cover)
+
+          Column({ space: 6 }) {
+            Row({ space: 10 }) {
+              Text(this.playState.name)
+                .fontSize(20)
+                .fontWeight(FontWeight.Medium)
+                .fontColor(this.themeState.getPrimaryTextColor())
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+                .layoutWeight(1)
+
+              if (this.isVipSong(this.playState.id)) {
+                Text('VIP')
+                  .fontSize(13)
+                  .fontColor('#D2A04B')
+                  .backgroundColor(this.withAlpha('#D2A04B', '1A'))
+                  .padding({ left: 5, right: 5, top: 3, bottom: 3 })
+                  .borderRadius(5)
+              }
+            }
+            .width('100%')
+
+            Text(this.playState.author)
+              .fontSize(16)
+              .fontColor(this.themeState.getSecondaryTextColor())
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .opacity(0.86)
+          }
+          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Start)
+          .justifyContent(FlexAlign.Center)
+
+          Row({ space: 20 }) {
+            Image(this.playState.isPlay ? $r('app.media.cat') : $r('app.media.catbegin'))
+              .width(42)
+              .height(42)
+              .margin({ top: -2 })
+
+            Image(this.playState.isPlay ? $r('app.media.ic_paused') : $r('app.media.ic_play'))
+              .width(31)
+              .height(31)
+              .fillColor(this.themeState.getIconColor())
+              .onClick(() => {
+                if (this.playState.isPlay) {
+                  playManager.paused()
+                } else {
+                  if (this.playState.playList.length > 0 && this.playState.playIndex >= 0) {
+                    const currentSong = this.playState.playList[this.playState.playIndex]
+                    playManager.singPlay(currentSong)
+                  }
+                }
+              })
+
+            Image($r('app.media.ic_more'))
+              .width(26)
+              .height(26)
+              .fillColor(this.themeState.getSecondaryTextColor())
+          }
+          .alignItems(VerticalAlign.Center)
+        }
+        .width('100%')
+        .height(84)
+        .padding({ left: 16, right: 16 })
+        .backgroundColor(this.themeState.getCardBackgroundColor())
+        .border({ width: { top: 0.5 }, color: this.themeState.getDividerColor() })
+        .onClick(() => {
+          this.pathStack.pushPathByName('Play', null, false)
+        })
       }
     }
     .width('100%')

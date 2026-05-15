@@ -1,11 +1,19 @@
+// 主题状态管理模块
 import { ThemeState } from '../models/theme'
 import common from '@ohos.app.ability.common'
 
+/**
+ * VersionInfo 页面构建器
+ */
 @Builder
 export function VersionInfoBuilder() {
   VersionInfo()
 }
 
+/**
+ * 版本信息页面组件
+ * 展示应用版本信息、检查更新和相关设置入口
+ */
 @ComponentV2
 export struct VersionInfo {
   pathStack: NavPathStack = new NavPathStack()
@@ -84,6 +92,9 @@ export struct VersionInfo {
     .title('版本信息')
   }
 
+  /**
+   * 渲染页面头部（Logo和版本信息）
+   */
   @Builder
   renderHeader() {
     Column({ space: 16 }) {
@@ -91,7 +102,6 @@ export struct VersionInfo {
         .width(80)
         .height(80)
         .borderRadius(20)
-        // 给Logo加个淡阴影更显品质
         .shadow({ radius: 8, color: 'rgba(0,0,0,0.1)', offsetY: 4 })
 
       Column({ space: 8 }) {
@@ -110,6 +120,12 @@ export struct VersionInfo {
     .alignItems(HorizontalAlign.Center)
   }
 
+  /**
+   * 渲染操作行组件
+   * @param label 操作名称
+   * @param value 操作值/状态
+   * @param onClick 点击回调
+   */
   @Builder
   renderActionRow(label: string, value: string, onClick: () => void) {
     Row() {
@@ -140,6 +156,9 @@ export struct VersionInfo {
     })
   }
 
+  /**
+   * 检查更新（模拟实现）
+   */
   private checkUpdate() {
     if (this.isChecking) return
     this.isChecking = true

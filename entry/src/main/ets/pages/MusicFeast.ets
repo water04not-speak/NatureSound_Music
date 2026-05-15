@@ -31,10 +31,10 @@ export struct MusicFeast {
   private readonly songPool: SongItemType[] = getDefaultSongItems()
 
   private readonly regionFallbackIds: Record<string, string[]> = {
-    'yangtze-delta': ['h000', 'h003', 'h005'],
-    'guangdong-hk-macao': ['h007', 'h008', 'h012'],
-    'chengdu-chongqing': ['h013', 'h015', 'h016'],
-    'yangtze-mid': ['h017', 'h018', 'h019'],
+    'yangtze-delta': ['h000', 'h003', 'h005', 'h022', 'h023'],
+    'guangdong-hk-macao': ['h007', 'h008', 'h012', 'h024', 'h025'],
+    'chengdu-chongqing': ['h013', 'h015', 'h016', 'h026', 'h027', 'h028'],
+    'yangtze-mid': ['h017', 'h018', 'h019', 'h029', 'h030'],
     'ancient-style': ['0007', '0029', '0030', '0031', '0032', '0033', '0034', '0035', '0046'],
     'modern-style': ['0000', '0001', '0002', '0003', '0004', '0005', '0006', '0008', '0009', '0010', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0020', '0021', '0023', '0024', '0025', '0026', '0027', '0028', '0036', '0037', '0038', '0040', '0041', '0042', '0043', '0044', '0045', '0047'],
     'wuxia-style': ['0019', '0030', '0039'],
@@ -50,7 +50,7 @@ export struct MusicFeast {
       description: '江南丝竹、评弹小调、昆曲选段',
       songs: [
         {
-          img: 'https://picsum.photos/seed/h000/320/320',
+          img: 'https://tse2-mm.cn.bing.net/th/id/OIP-C.pVp5RhSikU2DDsTE0QxeSwHaE8?w=270&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3',
           name: '欢乐歌',
           author: '民乐',
           url: 'https://music.163.com/song/media/outer/url?id=5259247.mp3',
@@ -65,7 +65,7 @@ export struct MusicFeast {
       description: '广府粤曲、粤语童谣、醒狮鼓点',
       songs: [
         {
-          img: 'https://picsum.photos/seed/h007/320/320',
+          img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.GzenW0inyAA1jmpMM9HTowAAAA?w=182&h=182&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3',
           name: '分飞燕',
           author: '群星',
           url: 'https://music.163.com/song/media/outer/url?id=5282935.mp3',
@@ -80,7 +80,7 @@ export struct MusicFeast {
       description: '川剧念白、川剧鼓点音效',
       songs: [
         {
-          img: 'https://picsum.photos/seed/h015/320/320',
+          img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.cFNK2TUUWX9dmsCg-1qQugHaE8?w=300&h=200&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3',
           name: '川剧·贵妃醉酒',
           author: '群星',
           url: 'https://music.163.com/song/media/outer/url?id=5266402.mp3',
@@ -95,7 +95,7 @@ export struct MusicFeast {
       description: '楚调湘音、黄梅戏选段',
       songs: [
         {
-          img: 'https://picsum.photos/seed/h019/320/320',
+          img: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.S4b74px7Ght-QIlA_6AT7AAAAA?w=179&h=180&c=7&r=0&o=7&dpr=1.3&pid=1.7&rm=3',
           name: '女驸马',
           author: '韩再芬',
           url: 'https://music.163.com/song/media/outer/url?id=1501412078.mp3',

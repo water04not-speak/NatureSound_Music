@@ -1,17 +1,27 @@
+// 全局状态管理模块
 import { AppStorageV2 } from '@kit.ArkUI'
+// 主题状态管理模块
 import { ThemeState } from '../models/theme'
 import common from '@ohos.app.ability.common'
 
+// 播放模式选项接口
 interface PlaybackModeOption {
   label: string
   active: boolean
 }
 
+/**
+ * PlaySettings 页面构建器
+ */
 @Builder
 export function PlaySettingsBuilder() {
   PlaySettings()
 }
 
+/**
+ * 播放设置页面组件
+ * 管理播放相关的基础行为设置
+ */
 @ComponentV2
 export struct PlaySettings {
   pathStack: NavPathStack = new NavPathStack()

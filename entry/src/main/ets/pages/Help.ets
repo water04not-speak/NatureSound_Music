@@ -1,18 +1,28 @@
 // 帮助中心页面
+// 全局状态管理模块
 import { AppStorageV2 } from '@kit.ArkUI'
+// 主题状态管理模块
 import { ThemeState } from '../models/theme'
 import common from '@ohos.app.ability.common'
 
+// FAQ 问题项接口
 interface FAQItem {
   question: string
   answer: string
 }
 
+/**
+ * Help 页面构建器
+ */
 @Builder
 export function HelpBuilder() {
   Help()
 }
 
+/**
+ * 帮助中心页面组件
+ * 展示常见问题和联系方式
+ */
 @ComponentV2
 export struct Help {
   @Local expandedIndex: number = -1

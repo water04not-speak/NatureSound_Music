@@ -15,6 +15,7 @@ export enum Gender {
 export interface UserAccount {
   username: string
   password: string
+  phone?: string          // 手机号
   nickname?: string        // 昵称
   gender?: Gender         // 性别
   age?: number            // 年龄
@@ -27,6 +28,7 @@ export class UserState {
   @Trace isLoggedIn: boolean = false
   @Trace username: string = ''
   @Trace password: string = ''
+  @Trace phone: string = ''
   @Trace nickname: string = ''           // 昵称
   @Trace gender: Gender = Gender.UNKNOWN  // 性别
   @Trace age: number = 0                 // 年龄
@@ -110,6 +112,7 @@ export class UserState {
       if (user) {
         this.username = user.username
         this.password = user.password
+        this.phone = user.phone || ''
         this.nickname = user.nickname || user.username
         this.gender = user.gender || Gender.UNKNOWN
         this.age = user.age || 0
@@ -120,6 +123,7 @@ export class UserState {
         this.isLoggedIn = false
         this.username = ''
         this.password = ''
+        this.phone = ''
         this.nickname = ''
         this.gender = Gender.UNKNOWN
         this.age = 0
@@ -130,6 +134,7 @@ export class UserState {
       this.isLoggedIn = false
       this.username = ''
       this.password = ''
+      this.phone = ''
       this.nickname = ''
       this.gender = Gender.UNKNOWN
       this.age = 0
@@ -175,6 +180,7 @@ export class UserState {
       this.userList.push({
         username,
         password,
+        phone: '',
         nickname: username,  // 默认昵称为用户名
         gender: Gender.UNKNOWN,
         age: 0,
@@ -194,6 +200,7 @@ export class UserState {
     if (user) {
       this.username = user.username
       this.password = user.password
+      this.phone = user.phone || ''
       this.nickname = user.nickname || user.username
       this.gender = user.gender || Gender.UNKNOWN
       this.age = user.age || 0
@@ -217,6 +224,7 @@ export class UserState {
     this.isLoggedIn = false
     this.username = ''
     this.password = ''
+    this.phone = ''
     this.nickname = ''
     this.gender = Gender.UNKNOWN
     this.age = 0
@@ -253,6 +261,54 @@ export class UserState {
     this.bio = bio
 
     // 保存到存储
+    await this.saveUserList()
+    return true
+  }
+
+  async changePassword(oldPassword: string, newPassword: string): Promise<boolean> {
+    if (!this.isLoggedIn || !this.username) {
+      return false
+    }
+
+    if (newPassword.length < 6) {
+      return false
+    }
+
+    const user: UserAccount | undefined = this.userList.find(u => u.username === this.username)
+    if (!user) {
+      return false
+    }
+
+    if (this.password) {
+      if (!oldPassword || oldPassword !== this.password) {
+        return false
+      }
+    } else if (oldPassword) {
+      return false
+    }
+
+    user.password = newPassword
+    this.password = newPassword
+    await this.saveUserList()
+    return true
+  }
+
+  async bindPhone(phone: string): Promise<boolean> {
+    if (!this.isLoggedIn || !this.username) {
+      return false
+    }
+
+    if (!/^1[3-9]\d{9}$/.test(phone)) {
+      return false
+    }
+
+    const user: UserAccount | undefined = this.userList.find(u => u.username === this.username)
+    if (!user) {
+      return false
+    }
+
+    user.phone = phone
+    this.phone = phone
     await this.saveUserList()
     return true
   }
@@ -381,6 +437,7 @@ export class UserState {
     if (user) {
       this.username = user.username
       this.password = user.password
+      this.phone = user.phone || ''
       this.nickname = user.nickname || user.username
       this.gender = user.gender || Gender.UNKNOWN
       this.age = user.age || 0

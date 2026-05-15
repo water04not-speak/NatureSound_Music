@@ -1,17 +1,27 @@
+// 用户状态管理模块
 import { UserState } from '../models/user'
+// 主题状态管理模块
 import { ThemeState } from '../models/theme'
 import common from '@ohos.app.ability.common'
 
+// 安全设备项接口定义
 interface SecurityDeviceItem {
   name: string
   detail: string
 }
 
+/**
+ * AccountSecurity 页面构建器
+ */
 @Builder
 export function AccountSecurityBuilder() {
   AccountSecurity()
 }
 
+/**
+ * 账号安全页面组件
+ * 管理密码修改、手机号绑定、登录设备管理
+ */
 @ComponentV2
 export struct AccountSecurity {
   pathStack: NavPathStack = new NavPathStack()
@@ -93,6 +103,9 @@ export struct AccountSecurity {
     .title('账号与安全')
   }
 
+  /**
+   * 同步安全状态数据
+   */
   private syncSecurityState() {
     this.phoneNumber = this.userState.phone || ''
     this.deviceList = this.buildDeviceList()
@@ -364,6 +377,9 @@ export struct AccountSecurity {
     .borderRadius(24)
   }
 
+  /**
+   * 打开修改密码弹窗
+   */
   private openPasswordPanel() {
     if (!this.userState.isLoggedIn) {
       this.showToast('请先登录后再修改密码')
@@ -375,6 +391,9 @@ export struct AccountSecurity {
     this.panelMode = 'password'
   }
 
+  /**
+   * 打开绑定手机弹窗
+   */
   private openPhonePanel() {
     if (!this.userState.isLoggedIn) {
       this.showToast('请先登录后再绑定手机号')
@@ -384,6 +403,9 @@ export struct AccountSecurity {
     this.panelMode = 'phone'
   }
 
+  /**
+   * 打开设备管理弹窗
+   */
   private openDevicesPanel() {
     if (!this.userState.isLoggedIn) {
       this.showToast('请先登录后再查看设备')
@@ -393,6 +415,10 @@ export struct AccountSecurity {
     this.panelMode = 'devices'
   }
 
+  /**
+   * 关闭弹窗
+   * @param message 提示消息
+   */
   private closePanel(message: string = '') {
     this.panelMode = 'none'
     if (message) {
@@ -400,6 +426,9 @@ export struct AccountSecurity {
     }
   }
 
+  /**
+   * 提交密码修改
+   */
   private async submitPasswordChange() {
     if (!this.newPassword || this.newPassword.length < 6) {
       this.showToast('新密码至少 6 位')
@@ -420,6 +449,9 @@ export struct AccountSecurity {
     }
   }
 
+  /**
+   * 提交手机绑定
+   */
   private async submitBindPhone() {
     const success = await this.userState.bindPhone(this.phoneNumber)
     if (success) {
@@ -431,6 +463,10 @@ export struct AccountSecurity {
     }
   }
 
+  /**
+   * 构建设备列表
+   * @param keepOnlyCurrent 是否只保留当前设备
+   */
   private buildDeviceList(keepOnlyCurrent: boolean = false): SecurityDeviceItem[] {
     const currentDevice: SecurityDeviceItem = {
       name: '当前设备',
@@ -448,6 +484,9 @@ export struct AccountSecurity {
     ]
   }
 
+  /**
+   * 手机号脱敏处理
+   */
   private maskPhone(phone: string): string {
     if (phone.length !== 11) {
       return phone
@@ -455,6 +494,9 @@ export struct AccountSecurity {
     return `${phone.slice(0, 3)}****${phone.slice(7)}`
   }
 
+  /**
+   * 显示提示消息
+   */
   private showToast(message: string) {
     this.feedback = message
   }

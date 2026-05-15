@@ -271,6 +271,23 @@ struct Play {
     return resolveByScreenHeight(this.getScreenHeight(), 50, 80, 120)
   }
 
+  // 计算进度比例
+  private getProgressRatio(): number {
+    if (this.playState.duration > 0) {
+      return this.playState.time / this.playState.duration
+    }
+    return 0
+  }
+
+  // 猫咪舞动动画组件
+  @Builder
+  CatDanceAnimation() {
+    Image(this.playState.isPlay ? $r('app.media.catstart') : $r('app.media.catstop'))
+      .width(35)
+      .height(35)
+      .translate({ x: -110 + this.getProgressRatio() * this.getScreenWidth(), y: -10 })
+  }
+
   // 滚动相关属性
   @Local scrollPosition: number = 0
   @Local showScrollTopButton: boolean = false
@@ -521,25 +538,35 @@ struct Play {
             .padding({ top: 12, bottom: 24 })
             // 播放
             Column() {
-              // 进度条
+              // 进度条和猫咪动画
               Row({ space: 4 }) {
                 Text(this.number2time(this.playState.time))
                   .fontSize(12)
                   .fontColor(this.themeState.getPlayPageForegroundColor())
-                Slider({
-                  value: this.playState.time,
-                  min: 0,
-                  max: this.playState.duration > 0 ? this.playState.duration : 10000
-                })
-                  .layoutWeight(1)
-                  .blockColor(this.themeState.getPlayPageForegroundColor())
-                  .selectedColor(this.themeState.getPlayPageForegroundColor())
-                  .trackColor(this.themeState.getIsDark() ? '#66FFFFFF' : '#66000000')
-                  .trackThickness(3)
-                  .onChange((value)=>{
-                    console.info('进度条被拖动，值为:', value)
-                    playManager.seekPlay(value)
+                Stack() {
+                  // 进度条轨道
+                  Slider({
+                    value: this.playState.time,
+                    min: 0,
+                    max: this.playState.duration > 0 ? this.playState.duration : 10000
                   })
+                    .layoutWeight(1)
+                    .blockColor(this.themeState.getPlayPageForegroundColor())
+                    .selectedColor(this.themeState.getPlayPageForegroundColor())
+                    .trackColor(this.themeState.getIsDark() ? '#66FFFFFF' : '#66000000')
+                    .trackThickness(3)
+                    .onChange((value)=>{
+                      console.info('进度条被拖动，值为:', value)
+                      playManager.seekPlay(value)
+                    })
+                  // 猫咪图标跟随进度条滑块移动，起点和终点与进度条一致
+                  Image(this.playState.isPlay ? $r('app.media.catstart') : $r('app.media.catstop'))
+                    .width(35)
+                    .height(35)
+                    .position({ x: this.getProgressRatio() * 100 + '%', y: -17.5 })
+                    .translate({ x: -17.5 })
+                }
+                .layoutWeight(1)
                 Text(this.number2time(this.playState.duration))
                   .fontSize(12)
                   .fontColor(this.themeState.getPlayPageForegroundColor())

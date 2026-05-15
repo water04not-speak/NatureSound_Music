@@ -1,17 +1,27 @@
+// 全局状态管理模块
 import { AppStorageV2 } from '@kit.ArkUI'
+// 主题状态管理模块
 import { ThemeState } from '../models/theme'
 import common from '@ohos.app.ability.common'
 
+// 下载音质选项接口
 interface DownloadQualityOption {
   label: string
   active: boolean
 }
 
+/**
+ * DownloadSettings 页面构建器
+ */
 @Builder
 export function DownloadSettingsBuilder() {
   DownloadSettings()
 }
 
+/**
+ * 下载设置页面组件
+ * 管理离线歌曲的下载方式、音质和缓存占用
+ */
 @ComponentV2
 export struct DownloadSettings {
   pathStack: NavPathStack = new NavPathStack()

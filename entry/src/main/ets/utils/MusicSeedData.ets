@@ -292,10 +292,10 @@ export const defaultMusicSeeds: MusicSongSeed[] = [
   },
   {
     id: '0040',
-    title: '隐喻',
-    singer: '廖泽蓝,蘑菇鼠牙',
-    url: 'http://music.163.com/song/media/outer/url?id=3342356985.mp3',
-    cover: 'https://tse1-mm.cn.bing.net/th/id/OIP-C.oBBTKCjV31L4b55GaaVfGgHaHa?w=185&h=192&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3'
+    title: 'September',
+    singer: 'Earth, Wind & Fire',
+    url: 'http://music.163.com/song/media/outer/url?id=481765805.mp3',
+    cover: 'https://kkimgs.yisou.com/ims?kt=url&at=ori&key=aHR0cHM6Ly9zbnMtaW1nLXFjLnhoc2Nkbi5jb20vMTA0MGcyc2czMTF2dXRwcnVqMjAwNDhidG1hOXRlZWgzODAwZzg5Zw==&sign=yx:OqL9qLDQWTYRi4y5Ykah6r_LVBw=&tv=0_0'
   },
   {
     id: '0041',
@@ -306,10 +306,10 @@ export const defaultMusicSeeds: MusicSongSeed[] = [
   },
   {
     id: '0042',
-    title: 'I Like Me Better',
-    singer: 'Lauv',
-    url: 'http://music.163.com/song/media/outer/url?id=479223413.mp3',
-    cover: 'https://tse3-mm.cn.bing.net/th/id/OIP-C.rtUjhJYVuztUUWDjvZD7LgHaHa?w=149&h=180&c=7&r=0&o=7&dpr=1.5&pid=1.7&rm=3'
+    title: '一个人想着一个人',
+    singer: '曾沛慈',
+    url: 'http://music.163.com/song/media/outer/url?id=501347079.mp3',
+    cover: 'http://p2.music.126.net/7136kwDE1UvY6uh0VXQ01g==/109951167220899564.jpg?param=300x300'
   },
   {
     id: '0043',

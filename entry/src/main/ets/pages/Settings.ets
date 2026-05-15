@@ -1,21 +1,33 @@
 // 设置页面
+// 全局状态管理模块
 import { AppStorageV2 } from '@kit.ArkUI'
+// 用户状态管理模块
 import { UserState } from '../models/user'
+// 主题状态管理模块
 import { ThemeState } from '../models/theme'
 import common from '@ohos.app.ability.common'
+// 用户协议参数类型
 import { TermsParams } from './Terms'
 
+// 设置项接口定义
 interface SettingsItem {
   title: string
   icon: ResourceStr
   onClick: () => void
 }
 
+/**
+ * Settings 页面构建器
+ */
 @Builder
 export function SettingsBuilder() {
   Settings()
 }
 
+/**
+ * 设置页面组件
+ * 管理账号、播放和应用偏好设置
+ */
 @ComponentV2
 export struct Settings {
   pathStack: NavPathStack = new NavPathStack()
