@@ -1,32 +1,72 @@
-# 鸿蒙构建缓存
+# HarmonyOS / DevEco Studio build output
 .hvigor/
 oh_modules/
+node_modules/
+build/
+.build/
+.preview/
+.cxx/
+.test/
+entry/build/
+entry/.preview/
+entry/.cxx/
+entry/.test/
 
-# IDE配置
+# IDE and local workspace files
 .idea/
+.vscode/
+*.iml
 
-# 本地环境配置
+# Local environment
 local.properties
+*.local
+.env
+.env.*
 
-# 签名密钥（敏感信息！）
+# Signing certificates and private materials
 *.csr
 *.p12
+*.p7b
+*.cer
 *.key
 *.keystore
+material/
 
-# 文档和备份
-其他相关文档/
-*.md
-*.txt
-!README.md
+# DevEco / analyzer local cache
+.appanalyzer/
 
-# 压缩包
+# Archives and packaged artifacts
 *.zip
 *.rar
+*.7z
 *.tar
 *.gz
+*.hap
+*.app
+*.har
 
-# 系统缓存
-.DS_Store
-*.iml
+# Logs and temporary files
 *.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+docs/screenshots/_contact_sheet.png
+
+# Local one-off helper scripts
+*.py
+
+# Local draft documents and generated notes
+其他相关文档/
+PLAN_*.md
+TASK_*.md
+*_REPORT.md
+entry/FEATURES_DONE.md
+entry/MISSING_FEATURES.md
+*.docx
+*.pptx
+*.xlsx
+*.pdf
+
+# Large local source/backup folders not required for GitHub presentation
+歌词/

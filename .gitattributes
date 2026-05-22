@@ -1,0 +1,14 @@
+# Treat ArkTS source files as TypeScript on GitHub language statistics.
+*.ets linguist-language=TypeScript
+
+# Keep generated/local data files out of language statistics.
+*.json linguist-generated=true
+*.json5 linguist-generated=true
+*.lock linguist-generated=true
+
+# Screenshots and binary assets should not affect language stats.
+*.png linguist-generated=true
+*.jpg linguist-generated=true
+*.jpeg linguist-generated=true
+*.gif linguist-generated=true
+*.svg linguist-generated=true
