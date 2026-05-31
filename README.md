@@ -216,7 +216,6 @@ hdc uninstall com.xxfn.NatureSound_Music
 | `ohos.permission.READ_MEDIA` | 读取本地媒体文件 |
 | `ohos.permission.WRITE_MEDIA` | 下载、缓存或写入媒体文件 |
 
-##简要说明
 > 基于 HarmonyOS ArkTS 独立开发音乐播放应用“万物之声”，实现在线音乐播放、后台播放、歌词解析、歌单推荐、非遗音乐内容展示、互动社区、用户登录注册、主题换肤和本地 RDB 数据持久化。项目封装 `AVPlayer` 播放器桥接层与 `MusicRepository` 数据访问层，支持播放状态同步、播放列表管理、收藏搜索、离线文件优先播放和远程流回退，具备较完整的移动端音乐 App 业务闭环。
 
 ## 后续优化方向
