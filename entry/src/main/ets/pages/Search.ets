@@ -39,13 +39,12 @@ export struct SearchPage {
   @Local isLoading: boolean = true
   @Local searchHint: string = '搜索歌曲、歌手'
   @Local hotSearches: string[] = [
-    '毛不易',
-    'Unit 731',
-    'YOUTH',
-    '吹梦到西洲',
-    '杜宣达',
-    '李荣浩',
-    '青丝'
+    'Demo Ambient',
+    'Demo Rain',
+    'Jiangnan Texture',
+    'Lingnan Rhythm',
+    'Bashu Soundscape',
+    'Chu Tune'
   ]
 
   pathStack: NavPathStack = AppStorageV2.connect(NavPathStack, 'navStack', () => new NavPathStack())!
@@ -60,7 +59,7 @@ export struct SearchPage {
   private readonly historyKey: string = 'search_history_v1'
 
   private vipSongIdSet: Set<string> = new Set<string>([
-    '0001', '0003', '0006', '0007', '0013', '0029', '0030', '0032', '0046'
+    'demo-ambient-002', 'demo-playlist-002'
   ])
 
   private isVipSong(songId: string): boolean {

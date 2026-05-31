@@ -328,7 +328,7 @@ export struct Moment {
       const newComment: CommentItemType = {
         id: `u-${now}`,
         author: username,
-        avatar: 'http://yjy-teach-oss.oss-cn-beijing.aliyuncs.com/HeimaCloudMusic/h1.jpg',
+        avatar: 'app.media.icon',
         content,
         createdAt: now,
         like: 0,

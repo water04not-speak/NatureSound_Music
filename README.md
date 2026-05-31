@@ -4,6 +4,16 @@
 
 > 适合作为 HarmonyOS / ArkTS / ArkUI 方向的课程设计、毕业设计、面试作品集项目展示。
 
+## 版权与资源说明
+
+本仓库仅用于 HarmonyOS / ArkTS / ArkUI 学习、课程设计、作品集展示和技术交流。
+
+为避免版权风险，公开仓库不包含任何受版权保护的完整音频、歌词、专辑封面、歌手图片或第三方商业素材。
+
+项目中的音乐数据、歌词数据和封面数据仅保留演示结构或占位示例。开发者如需运行完整播放效果，请自行导入已获得合法授权的音频、歌词和图片资源。
+
+本项目不提供音乐资源下载服务，不用于商业运营。
+
 ## 项目亮点
 
 - 完整音乐播放链路：基于 `AVPlayer` 封装播放器桥接层，支持播放、暂停、切歌、进度拖动、播放模式、播放列表维护。
@@ -84,6 +94,7 @@
 - [架构说明](docs/ARCHITECTURE.md)：工程分层、播放链路、数据持久化与非遗模块说明。
 - [面试讲解稿](docs/INTERVIEW_GUIDE.md)：项目介绍、简历描述、高频问题回答方向。
 - [仓库发布清单](docs/REPOSITORY_CHECKLIST.md)：GitHub 发布前需要保留和排除的文件。
+- [资源占位说明](docs/ASSETS_NOTICE.md)：公开仓库不包含完整版权素材的说明。
 - [截图说明](docs/screenshots/README.md)：README 页面截图命名与维护规则。
 
 ## 技术实现
@@ -134,8 +145,7 @@ NatureSound_Music/
 │       ├── base/media/               # 图片、图标、动效资源
 │       └── base/profile/             # 路由、页面、备份配置
 ├── docs/screenshots/                 # README 页面截图
-├── 歌词/                             # 歌词资料
-├── lyrics_dict.json                  # 歌词字典数据
+├── lyrics_dict.json                  # demo 歌词字典结构
 ├── build-profile.json5               # 工程构建配置
 └── oh-package.json5                  # 工程依赖配置
 ```

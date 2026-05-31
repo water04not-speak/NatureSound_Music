@@ -21,20 +21,14 @@ class AvPlayerBridge {
   private lastSnapshotAt: number = 0
 
   /**
-   * 【通俗解释】很多曲库外链是 http，部分设备/网络策略会拦截明文流。
-   * 这里统一改成 https，尽量减少“明明有歌却播不出来”的情况。
+   * 【通俗解释】很多测试外链是 http，部分设备/网络策略会拦截明文流。
+   * 这里统一改成 https，尽量减少“明明配置了合法资源却播不出来”的情况。
    */
   private normalizeStreamUrl(url: string): string {
     if (!url) {
       return ''
     }
-    if (url.includes('id=37988002')) {
-      return 'https://music.163.com/song/media/outer/url?id=3358682441.mp3'
-    }
-    if (url.includes('id=3329325495')) {
-      return 'https://music.163.com/song/media/outer/url?id=2026544587.mp3'
-    }
-    if (url.startsWith('http://music.163.com/')) {
+    if (url.startsWith('http://')) {
       return 'https://' + url.substring('http://'.length)
     }
     return url

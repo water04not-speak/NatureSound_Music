@@ -1,3 +1,27 @@
+# Copyright-sensitive media resources
+*.mp3
+*.m4a
+*.aac
+*.wav
+*.flac
+*.ogg
+*.lrc
+*.srt
+*.vtt
+
+# Media/cache directories
+歌词/
+lyrics/
+music/
+audio/
+songs/
+covers/
+cover/
+album/
+albums/
+downloads/
+cache/
+
 # HarmonyOS / DevEco Studio build output
 .hvigor/
 oh_modules/
@@ -17,19 +41,19 @@ entry/.test/
 .vscode/
 *.iml
 
-# Local environment
+# Signing and private files
 local.properties
 *.local
+*.p12
+*.csr
+*.key
+*.keystore
 .env
 .env.*
 
 # Signing certificates and private materials
-*.csr
-*.p12
 *.p7b
 *.cer
-*.key
-*.keystore
 material/
 
 # DevEco / analyzer local cache
@@ -69,4 +93,3 @@ entry/MISSING_FEATURES.md
 *.pdf
 
 # Large local source/backup folders not required for GitHub presentation
-歌词/
