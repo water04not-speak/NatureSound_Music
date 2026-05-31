@@ -1,10 +1,11 @@
 import { media } from '@kit.MediaKit'
 import { GlobalMusic } from '../models/globalMusic'
-import { SongItemType } from '../models/music'
+import { LyricLine, SongItemType } from '../models/music'
 import { sessionManager } from './AvSessionManager'
 import { currentSong as sharedCurrentSong } from './PlaybackState'
 import { downloadManager } from './DownloadManager'
 import { playbackSnapshotStore } from './PlaybackSnapshotStore'
+import { parseLRCCached } from './lyricsParser'
 
 /**
  * AvPlayerBridge 类
@@ -19,6 +20,16 @@ class AvPlayerBridge {
   private remoteFallbackUrl: string = ''
   private currentPlayerUrl: string = ''
   private lastSnapshotAt: number = 0
+  private initPromise?: Promise<void>
+  private listenersRegistered: boolean = false
+  private isChangingSong: boolean = false
+  private isPreparing: boolean = false
+  private isSeeking: boolean = false
+  private lastControlAt: number = 0
+  private lastProgressEmitAt: number = 0
+  private pendingChangeStartedAt: number = 0
+  private playerState: string = 'idle'
+  private lyricLineCache: Map<string, LyricLine[]> = new Map()
 
   /**
    * 【通俗解释】很多测试外链是 http，部分设备/网络策略会拦截明文流。
@@ -39,30 +50,82 @@ class AvPlayerBridge {
    * @returns Promise<void>
    */
   async init(): Promise<void> {
-    if (!this.player) {
-      try {
-        this.player = await media.createAVPlayer()
-      } catch (error) {
-        console.error('[AvPlayerBridge] 创建播放器失败:', error)
-        return
-      }
+    if (this.initPromise) {
+      return this.initPromise
     }
+    if (!this.player) {
+      const startAt = Date.now()
+      this.initPromise = (async () => {
+        this.player = await media.createAVPlayer()
+        console.info(`[PERF][Player] createAVPlayer cost=${Date.now() - startAt}ms`)
+      })().catch((error: Error) => {
+        console.error('[AvPlayerBridge] 创建播放器失败:', error)
+      }).finally(() => {
+        this.initPromise = undefined
+      })
+      await this.initPromise
+    }
+
+    if (!this.player || this.listenersRegistered) {
+      return
+    }
+    this.listenersRegistered = true
 
     // 监听播放器状态，驱动自动播放、切歌和错误回收
     this.player.on('stateChange', (state) => {
+      this.playerState = state
       console.info(`[AvPlayerBridge] 播放器状态变化: ${state}`)
       if (state === 'initialized') {
-        this.player?.prepare()
+        const player = this.player
+        if (!player) {
+          return
+        }
+        this.isPreparing = true
+        const prepareStartedAt = Date.now()
+        void player.prepare()
+          .then(() => {
+            console.info(`[PERF][Player] prepare cost=${Date.now() - prepareStartedAt}ms`)
+          })
+          .catch((error: Error) => {
+            this.isPreparing = false
+            this.isChangingSong = false
+            console.error('[AvPlayerBridge] prepare failed:', error)
+          })
       } else if (state === 'prepared') {
-        this.player?.play()
-        this.currentSong.isPlay = true
-        void playbackSnapshotStore.save(this.currentSong)
+        const player = this.player
+        if (!player) {
+          return
+        }
+        this.isPreparing = false
+        const playStartedAt = Date.now()
+        void player.play()
+          .then(() => {
+            this.currentSong.isPlay = true
+            this.isChangingSong = false
+            console.info(`[PERF][Player] play cost=${Date.now() - playStartedAt}ms`)
+            if (this.pendingChangeStartedAt > 0) {
+              console.info(`[PERF][Player] changeSong cost=${Date.now() - this.pendingChangeStartedAt}ms`)
+              this.pendingChangeStartedAt = 0
+            }
+            void playbackSnapshotStore.save(this.currentSong)
+          })
+          .catch((error: Error) => {
+            this.isChangingSong = false
+            this.currentSong.isPlay = false
+            console.error('[AvPlayerBridge] play failed:', error)
+            sessionManager.setAVPlayBackState(true)
+          })
       } else if (state === 'completed') {
+        this.isChangingSong = false
         this.nextPlay(true)
       } else if (state === 'released') {
         this.currentPlayerUrl = ''
+        this.listenersRegistered = false
+        this.playerState = 'released'
         this.currentSong.reset()
       } else if (state === 'error') {
+        this.isPreparing = false
+        this.isChangingSong = false
         void this.tryRemoteFallbackOnError()
           .then((recovered: boolean) => {
             if (recovered) {
@@ -70,12 +133,12 @@ class AvPlayerBridge {
             }
             console.error(`[AvPlayerBridge] 播放器错误，当前URL: ${this.currentSong.url}`)
             this.currentSong.isPlay = false
-            sessionManager.setAVPlayBackState()
+            sessionManager.setAVPlayBackState(true)
           })
           .catch((e: Error) => {
             console.error('[AvPlayerBridge] 远程回退异常:', e)
             this.currentSong.isPlay = false
-            sessionManager.setAVPlayBackState()
+            sessionManager.setAVPlayBackState(true)
           })
       }
     })
@@ -88,12 +151,12 @@ class AvPlayerBridge {
           }
           console.error(`[AvPlayerBridge] 播放错误: code=${error.code}, message=${error.message}, url=${this.currentSong.url}`)
           this.currentSong.isPlay = false
-          sessionManager.setAVPlayBackState()
+          sessionManager.setAVPlayBackState(true)
         })
         .catch((e: Error) => {
           console.error('[AvPlayerBridge] 远程回退异常:', e)
           this.currentSong.isPlay = false
-          sessionManager.setAVPlayBackState()
+            sessionManager.setAVPlayBackState(true)
         })
     })
 
@@ -106,9 +169,13 @@ class AvPlayerBridge {
     })
 
     this.player.on('timeUpdate', (time) => {
+      const now = Date.now()
+      if (now - this.lastProgressEmitAt < 500) {
+        return
+      }
+      this.lastProgressEmitAt = now
       this.currentSong.time = time
       // 降低 AVSession 状态更新频率，避免 IPC 频繁调用导致性能卡顿
-      const now = Date.now()
       if (!this.lastStateUpdateTime || now - this.lastStateUpdateTime > 1000) {
         sessionManager.setAVPlayBackState()
         this.lastStateUpdateTime = now
@@ -122,9 +189,18 @@ class AvPlayerBridge {
   }
 
   singPlay(song: SongItemType): void {
+    if (!song) {
+      return
+    }
+    const startAt = Date.now()
     console.info(`[AvPlayerBridge] singPlay 被调用，歌曲: ${song.name}`)
     if (!this.player) {
       console.error('[AvPlayerBridge] 播放器未初始化，无法播放歌曲')
+      return
+    }
+    const player = this.player
+    if (this.shouldThrottleControl()) {
+      console.info('[AvPlayerBridge] 播放操作过于频繁，已忽略')
       return
     }
     console.info('[AvPlayerBridge] 播放器已初始化，准备播放歌曲')
@@ -140,22 +216,29 @@ class AvPlayerBridge {
     if (inList) {
       if (canPlayDirectly) {
         console.info('[AvPlayerBridge] 播放同一首歌曲，直接播放')
-        this.player?.play()
-        this.currentSong.isPlay = true
-        console.info(`[AvPlayerBridge] 播放状态已更新: ${this.currentSong.isPlay}`)
-        void playbackSnapshotStore.save(this.currentSong)
+        const playStartedAt = Date.now()
+        void player.play()
+          .then(() => {
+            this.currentSong.isPlay = true
+            console.info(`[PERF][Player] play cost=${Date.now() - playStartedAt}ms`)
+            console.info(`[PERF][Player] singPlay cost=${Date.now() - startAt}ms`)
+            void playbackSnapshotStore.save(this.currentSong)
+          })
+          .catch((error: Error) => {
+            console.error('[AvPlayerBridge] resume play failed:', error)
+          })
       } else {
         console.info('[AvPlayerBridge] 切换到列表中的其他歌曲')
         this.currentSong.playIndex = this.currentSong.playList.findIndex(item => item.id === song.id)
         console.info(`[AvPlayerBridge] 新的播放索引: ${this.currentSong.playIndex}`)
-        this.changeSong()
+        void this.changeSong()
       }
     } else {
       console.info('[AvPlayerBridge] 歌曲不在列表中，添加到列表')
       this.currentSong.playList.unshift(song)
       this.currentSong.playIndex = 0
       console.info(`[AvPlayerBridge] 新的播放索引: ${this.currentSong.playIndex}`)
-      this.changeSong()
+      void this.changeSong()
     }
   }
 
@@ -170,10 +253,14 @@ class AvPlayerBridge {
     this.currentSong.playList = [...playList]
     this.currentSong.playIndex = idx >= 0 ? idx : 0
     void playbackSnapshotStore.save(this.currentSong)
-    this.changeSong()
+    void this.changeSong()
   }
 
   async changeSong(): Promise<void> {
+    if (this.isChangingSong) {
+      console.info('[AvPlayerBridge] changeSong 正在执行，忽略重复触发')
+      return
+    }
     if (!this.player) {
       console.error('[AvPlayerBridge] 播放器未初始化，无法切换歌曲')
       return
@@ -186,8 +273,12 @@ class AvPlayerBridge {
     }
 
     try {
+      this.isChangingSong = true
+      this.pendingChangeStartedAt = Date.now()
       console.info('[AvPlayerBridge] 开始切换歌曲...')
+      const resetStartedAt = Date.now()
       await this.player.reset()
+      console.info(`[PERF][Player] reset cost=${Date.now() - resetStartedAt}ms`)
       console.info('[AvPlayerBridge] 播放器重置完成')
 
       this.currentSong.duration = 0
@@ -197,7 +288,9 @@ class AvPlayerBridge {
       if (!song) {
         console.error('[AvPlayerBridge] 当前播放索引无效，无法切换歌曲')
         this.currentSong.isPlay = false
-        sessionManager.setAVPlayBackState()
+        this.isChangingSong = false
+        this.pendingChangeStartedAt = 0
+        sessionManager.setAVPlayBackState(true)
         return
       }
 
@@ -213,8 +306,17 @@ class AvPlayerBridge {
     
       if (!this.currentSong.lyricLines.length && song.lyric) {
         try {
-          const lyricsParser = await import('./lyricsParser')
-          this.currentSong.lyricLines = lyricsParser.parseLRC(song.lyric)
+          const lyricStartedAt = Date.now()
+          const lyricCacheKey = song.id || song.url
+          const cached = this.lyricLineCache.get(lyricCacheKey)
+          if (cached) {
+            this.currentSong.lyricLines = cached
+          } else {
+            const parsed = parseLRCCached(lyricCacheKey, song.lyric)
+            this.lyricLineCache.set(lyricCacheKey, parsed)
+            this.currentSong.lyricLines = parsed
+          }
+          console.info(`[PERF][Lyrics] changeSong parse cost=${Date.now() - lyricStartedAt}ms`)
           if (!this.currentSong.lyricLines.length) {
             this.currentSong.lyrics = song.lyric
               .split(/\r?\n/)
@@ -231,6 +333,7 @@ class AvPlayerBridge {
       this.remoteFallbackTried = false
       this.remoteFallbackUrl = this.normalizeStreamUrl(song.url)
       try {
+        const localCheckStartedAt = Date.now()
         const downloaded = await downloadManager.isDownloaded(song.id)
         if (downloaded) {
           const localPath = await downloadManager.getLocalPath(song.id)
@@ -240,6 +343,7 @@ class AvPlayerBridge {
             console.info(`[AvPlayerBridge] 使用离线文件播放: ${song.name}`)
           }
         }
+        console.info(`[PERF][Player] localCacheCheck cost=${Date.now() - localCheckStartedAt}ms`)
       } catch (error) {
         console.error('[AvPlayerBridge] 离线路径检查失败，回退网络播放:', JSON.stringify(error))
       }
@@ -252,9 +356,11 @@ class AvPlayerBridge {
       console.info('[AvPlayerBridge] URL已设置，等待播放器初始化...')
       void playbackSnapshotStore.save(this.currentSong)
     } catch (error) {
+      this.isChangingSong = false
+      this.isPreparing = false
       console.error('[AvPlayerBridge] 切换歌曲失败:', error)
       this.currentSong.isPlay = false
-      sessionManager.setAVPlayBackState()
+      sessionManager.setAVPlayBackState(true)
     }
   }
 
@@ -268,11 +374,13 @@ class AvPlayerBridge {
 
     this.remoteFallbackTried = true
     try {
+      const fallbackStartedAt = Date.now()
       console.info(`[AvPlayerBridge] 本地文件播放失败，回退远程流: ${this.remoteFallbackUrl}`)
       await this.player.reset()
       this.currentPlayerUrl = ''
       this.player.url = this.remoteFallbackUrl
       this.currentPlayerUrl = this.remoteFallbackUrl
+      console.info(`[PERF][Player] remoteFallback cost=${Date.now() - fallbackStartedAt}ms`)
       return true
     } catch (error) {
       console.error('[AvPlayerBridge] 远程回退失败:', error)
@@ -281,12 +389,20 @@ class AvPlayerBridge {
   }
 
   seekPlay(value: number): void {
+    const startAt = Date.now()
     console.info(`[AvPlayerBridge] seekPlay 被调用，跳转到: ${value}ms`)
     if (!this.player) {
       console.error('[AvPlayerBridge] 播放器未初始化，无法跳转进度')
       return
     }
+    if (this.isSeeking) {
+      console.info('[AvPlayerBridge] seek 正在执行，忽略重复触发')
+      return
+    }
+    this.isSeeking = true
     this.player.seek(value)
+    this.isSeeking = false
+    console.info(`[PERF][Player] seekPlay cost=${Date.now() - startAt}ms`)
     console.info('[AvPlayerBridge] 跳转进度完成')
   }
 
@@ -296,13 +412,23 @@ class AvPlayerBridge {
       console.error('[AvPlayerBridge] 播放器未初始化，无法暂停')
       return
     }
+    if (this.shouldThrottleControl()) {
+      console.info('[AvPlayerBridge] 暂停操作过于频繁，已忽略')
+      return
+    }
     console.info('[AvPlayerBridge] 执行暂停操作')
-    this.player.pause()
-    this.currentSong.isPlay = false
-    console.info(`[AvPlayerBridge] 暂停状态已更新: ${this.currentSong.isPlay}`)
-    sessionManager.setAVPlayBackState()
-    void playbackSnapshotStore.save(this.currentSong)
-    void sessionManager.stopBackgroundTask()
+    const pauseStartedAt = Date.now()
+    void this.player.pause()
+      .then(() => {
+        this.currentSong.isPlay = false
+        console.info(`[PERF][Player] pause cost=${Date.now() - pauseStartedAt}ms`)
+        sessionManager.setAVPlayBackState(true)
+        void playbackSnapshotStore.save(this.currentSong)
+        void sessionManager.stopBackgroundTask()
+      })
+      .catch((error: Error) => {
+        console.error('[AvPlayerBridge] pause failed:', error)
+      })
   }
 
   prevPlay(): void {
@@ -375,6 +501,18 @@ class AvPlayerBridge {
     void playbackSnapshotStore.save(this.currentSong)
     void sessionManager.stopBackgroundTask()
     await this.player?.release()
+    this.player = null
+    this.listenersRegistered = false
+    this.playerState = 'released'
+  }
+
+  private shouldThrottleControl(): boolean {
+    const now = Date.now()
+    if (now - this.lastControlAt < 250) {
+      return true
+    }
+    this.lastControlAt = now
+    return false
   }
 }
 

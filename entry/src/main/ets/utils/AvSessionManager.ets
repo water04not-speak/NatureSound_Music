@@ -11,11 +11,29 @@ class AvSessionManager{
   playState:GlobalMusic=sharedCurrentSong//不为空时等号赋值
   private context: Context | null = null
   private isBackgroundTaskStarted: boolean = false
+  private initPromise?: Promise<void>
+  private eventsRegistered: boolean = false
+  private lastMetadataKey: string = ''
+  private lastPlaybackStateAt: number = 0
 
   async init(content:Context){
+    if (this.session) {
+      this.context = content
+      return
+    }
+    if (this.initPromise) {
+      return this.initPromise
+    }
     this.context = content
-     this.session =await avSession.createAVSession(content,'bgPlay','audio')
-    this.registerEvent()
+    const startAt = Date.now()
+    this.initPromise = (async () => {
+      this.session = await avSession.createAVSession(content,'bgPlay','audio')
+      console.info(`[PERF][AVSession] init cost=${Date.now() - startAt}ms`)
+      this.registerEvent()
+    })().finally(() => {
+      this.initPromise = undefined
+    })
+    return this.initPromise
   }
 
 
@@ -32,8 +50,7 @@ class AvSessionManager{
       // 添加需要被拉起应用的bundleName和abilityName
       wants: [
         {
-          // 改包名
-          bundleName: "com.example.hm_music",
+          bundleName: "com.xxfn.NatureSound_Music",
           abilityName: "EntryAbility"
         }
       ],
@@ -67,21 +84,45 @@ class AvSessionManager{
 
 //   设置元数据
   setAVMetadata(song:SongItemType){
-    this.session?.setAVMetadata({
+    const session = this.session
+    if (!session) {
+      return
+    }
+    const metadataKey = `${song.id}|${this.playState.duration}`
+    if (metadataKey === this.lastMetadataKey) {
+      return
+    }
+    this.lastMetadataKey = metadataKey
+    const startAt = Date.now()
+    void session.setAVMetadata({
       assetId:song.id,
       title:song.name,
       mediaImage:song.img,
       artist:song.author,
       duration:this.playState.duration
 
+    }).then(() => {
+      console.info(`[PERF][AVSession] setMetadata cost=${Date.now() - startAt}ms`)
+    }).catch((error: Error) => {
+      console.error('[AvSessionManager] setAVMetadata failed:', JSON.stringify(error))
     })
   }
 
 
 
 //   设置播放状态
-  setAVPlayBackState(){
-    this.session?.setAVPlaybackState({
+  setAVPlayBackState(force: boolean = false){
+    const session = this.session
+    if (!session) {
+      return
+    }
+    const now = Date.now()
+    if (!force && now - this.lastPlaybackStateAt < 800) {
+      return
+    }
+    this.lastPlaybackStateAt = now
+    const startAt = Date.now()
+    void session.setAVPlaybackState({
       state:this.playState.isPlay?avSession.PlaybackState.PLAYBACK_STATE_PLAY:avSession.PlaybackState.PLAYBACK_STATE_PAUSE,
       speed:1,
       position:{
@@ -89,13 +130,24 @@ class AvSessionManager{
         updateTime:new Date().getTime()  //系统时间
       },
       duration:this.playState.duration
+    }).then(() => {
+      console.info(`[PERF][AVSession] setPlaybackState cost=${Date.now() - startAt}ms`)
+    }).catch((error: Error) => {
+      console.error('[AvSessionManager] setAVPlaybackState failed:', JSON.stringify(error))
     })
   }
 
 // 注册事件
   registerEvent(){
+    if (this.eventsRegistered) {
+      return
+    }
+    this.eventsRegistered = true
     this.session?.on('play',()=>{
-      playerBridge.singPlay(this.playState.playList[this.playState.playIndex])
+      const current = this.playState.playList[this.playState.playIndex]
+      if (current) {
+        playerBridge.singPlay(current)
+      }
     })
     this.session?.on('pause',()=>{
       playerBridge.paused()
@@ -118,6 +170,9 @@ class AvSessionManager{
     await this.stopBackgroundTask()
     await this.session?.destroy()
     this.session = null
+    this.eventsRegistered = false
+    this.lastMetadataKey = ''
+    this.lastPlaybackStateAt = 0
   }
 
 }

@@ -1,5 +1,7 @@
 import { LyricLine } from '../models/music'
 
+const lyricParseCache: Map<string, LyricLine[]> = new Map()
+
 /**
  * 解析 LRC 歌词字符串，得到带时间戳的歌词行。
  * 支持 [mm:ss.xx] 或 [mm:ss] 格式。
@@ -7,6 +9,7 @@ import { LyricLine } from '../models/music'
  * @returns 按时间排序的歌词行数组
  */
 export function parseLRC(lrcContent: string): LyricLine[] {
+  const startAt = Date.now()
   const lines = lrcContent.split(/\r?\n/)
   const result: LyricLine[] = []
   const timeTag = /\[(\d{1,2}):(\d{2})(?:\.(\d{2,3}))?\]/g
@@ -29,7 +32,19 @@ export function parseLRC(lrcContent: string): LyricLine[] {
   }
 
   result.sort((a, b) => a.time - b.time)
+  console.info(`[PERF][Lyrics] parse cost=${Date.now() - startAt}ms`)
   return result
+}
+
+export function parseLRCCached(cacheKey: string, lrcContent: string): LyricLine[] {
+  const cached = lyricParseCache.get(cacheKey)
+  if (cached) {
+    return cached
+  }
+
+  const parsed = parseLRC(lrcContent)
+  lyricParseCache.set(cacheKey, parsed)
+  return parsed
 }
 
 /**

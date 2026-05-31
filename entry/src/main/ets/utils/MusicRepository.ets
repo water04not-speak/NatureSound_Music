@@ -15,12 +15,16 @@ import { findLyricBySongId } from './LyricDictionary'
  */
 export class MusicRepository {
   private seedPromise?: Promise<void>
+  private allSongsCache?: SongItemType[]
+  private songCache: Map<string, SongItemType> = new Map()
 
   /**
    * 初始化数据库连接
    */
   async init(context: common.UIAbilityContext): Promise<void> {
+    const startAt = Date.now()
     await musicDatabase.getStore(context)
+    console.info(`[PERF][RDB] init cost=${Date.now() - startAt}ms`)
   }
 
   async seedIfNeeded(context: common.UIAbilityContext, seeds: MusicSongSeed[]): Promise<void> {
@@ -56,6 +60,8 @@ export class MusicRepository {
             createTime: baseTime + index
           })
         }
+        this.allSongsCache = undefined
+        this.songCache.clear()
       } catch (error) {
         console.error('[MusicRepository] seedIfNeeded failed:', String(error))
         throw new Error(String(error))
@@ -135,9 +141,17 @@ export class MusicRepository {
   }
 
   async getAllSongs(context: common.UIAbilityContext): Promise<SongItemType[]> {
+    if (this.allSongsCache) {
+      return this.allSongsCache
+    }
+    const startAt = Date.now()
     try {
       const store = await musicDatabase.getStore(context)
-      return this.mapEntitiesToSongItems(await this.queryAll(store))
+      const songs = this.mapEntitiesToSongItems(await this.queryAll(store))
+      this.allSongsCache = songs
+      this.rebuildSongCache(songs)
+      console.info(`[PERF][RDB] queryAllSongs cost=${Date.now() - startAt}ms`)
+      return songs
     } catch (error) {
       console.error('[MusicRepository] getAllSongs failed:', String(error))
       return []
@@ -145,9 +159,12 @@ export class MusicRepository {
   }
 
   async getFavoriteSongs(context: common.UIAbilityContext): Promise<SongItemType[]> {
+    const startAt = Date.now()
     try {
       const store = await musicDatabase.getStore(context)
-      return this.mapEntitiesToSongItems(await this.queryByFavorite(store, 1))
+      const songs = this.mapEntitiesToSongItems(await this.queryByFavorite(store, 1))
+      console.info(`[PERF][RDB] queryFavoriteSongs cost=${Date.now() - startAt}ms`)
+      return songs
     } catch (error) {
       console.error('[MusicRepository] getFavoriteSongs failed:', String(error))
       return []
@@ -155,10 +172,20 @@ export class MusicRepository {
   }
 
   async getSongById(context: common.UIAbilityContext, id: string): Promise<SongItemType | undefined> {
+    const cached = this.songCache.get(id)
+    if (cached) {
+      return cached
+    }
+    const startAt = Date.now()
     try {
       const store = await musicDatabase.getStore(context)
       const entity = await this.queryOne(store, id)
-      return entity ? this.mapEntityToSongItem(entity) : undefined
+      const song = entity ? this.mapEntityToSongItem(entity) : undefined
+      if (song) {
+        this.songCache.set(id, song)
+      }
+      console.info(`[PERF][RDB] querySong cost=${Date.now() - startAt}ms`)
+      return song
     } catch (error) {
       console.error('[MusicRepository] getSongById failed:', String(error))
       return undefined
@@ -171,6 +198,7 @@ export class MusicRepository {
       return []
     }
 
+    const startAt = Date.now()
     try {
       const store = await musicDatabase.getStore(context)
       const likeKeyword = `%${normalized}%`
@@ -178,7 +206,9 @@ export class MusicRepository {
         `SELECT id, title, singer, url, cover, lyric, isFavorite, createTime FROM ${MusicDatabase.TABLE_NAME} WHERE title LIKE ? OR singer LIKE ? ORDER BY createTime ASC LIMIT ${limit} OFFSET ${offset}`,
         [likeKeyword, likeKeyword]
       )
-      return this.mapEntitiesToSongItems(this.readResultSet(rs))
+      const songs = this.mapEntitiesToSongItems(this.readResultSet(rs))
+      console.info(`[PERF][RDB] searchSongs cost=${Date.now() - startAt}ms`)
+      return songs
     } catch (error) {
       console.error('[MusicRepository] searchSongs failed:', String(error))
       return []
@@ -226,7 +256,10 @@ export class MusicRepository {
         createTime: current.createTime
       }
       await this.updateSongInternal(store, next)
-      return this.mapEntityToSongItem(next)
+      const updated = this.mapEntityToSongItem(next)
+      this.songCache.set(id, updated)
+      this.allSongsCache = undefined
+      return updated
     } catch (error) {
       console.error('[MusicRepository] toggleFavorite failed:', String(error))
       return undefined
@@ -252,6 +285,8 @@ export class MusicRepository {
         })
         index++
       }
+      this.allSongsCache = undefined
+      this.songCache.clear()
     } catch (error) {
       console.error('[MusicRepository] replaceAll failed:', String(error))
       throw new Error(String(error))
@@ -411,6 +446,15 @@ export class MusicRepository {
 
   private mapEntitiesToSongItems(entities: MusicSongEntity[]): SongItemType[] {
     return entities.map((entity: MusicSongEntity) => this.mapEntityToSongItem(entity))
+  }
+
+  private rebuildSongCache(songs: SongItemType[]): void {
+    this.songCache.clear()
+    for (const song of songs) {
+      if (song.id) {
+        this.songCache.set(song.id, song)
+      }
+    }
   }
 }
 

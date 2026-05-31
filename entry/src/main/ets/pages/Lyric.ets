@@ -3,7 +3,7 @@ import { SongItemType, LyricLine } from "../models/music"
 import { AppStorageV2 } from "@kit.ArkUI"
 import { ThemeState } from "../models/theme"
 import { playManager } from "../utils/AvPlayerManager"
-import { parseLRC } from "../utils/lyricsParser"
+import { parseLRCCached } from "../utils/lyricsParser"
 
 /**
  * 歌词页面的构造函数
@@ -41,6 +41,9 @@ export struct Lyric {
    * 【通俗解释】用轻量定时器轮询播放时间，确保歌词滚动在所有机型都稳定触发。
    */
   private syncLyricByTime(): void {
+    if (this.swiperIndex !== 1) {
+      return
+    }
     if (this.playState.time === this.lastObservedTime) {
       return
     }
@@ -75,7 +78,7 @@ export struct Lyric {
     }
     this.lyricTickId = setInterval(() => {
       this.syncLyricByTime()
-    }, 120)
+    }, 500)
   }
 
   private stopLyricTicker(): void {
@@ -224,7 +227,7 @@ export struct Lyric {
     }
 
     if (sourceLyric.length > 0) {
-      const parsed = parseLRC(sourceLyric)
+      const parsed = parseLRCCached(cacheKey, sourceLyric)
       const parsedDisplay = this.getDisplayLines(parsed)
       if (parsedDisplay.length > 0) {
         this.cachedLyricKey = cacheKey

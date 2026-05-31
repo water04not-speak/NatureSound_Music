@@ -107,8 +107,10 @@ struct Play {
       return
     }
     try {
+      const startAt = Date.now()
       const abilityCtx = getContext(this) as common.UIAbilityContext
       const latest = await musicRepository.getSongById(abilityCtx, songId)
+      console.info(`[PERF][RDB] playSyncSong cost=${Date.now() - startAt}ms`)
       if (!latest) {
         return
       }
@@ -174,6 +176,7 @@ struct Play {
 
   private async initPageData(): Promise<void> {
     // 【通俗解释】页面启动时按“默认种子 -> 数据库”两层加载，确保冷启动有数据、热启动有最新状态。
+    const startAt = Date.now()
     const abilityCtx = getContext(this) as common.UIAbilityContext
     this.songs = getDefaultSongItems()
     try {
@@ -199,13 +202,14 @@ struct Play {
     this.syncPlayStateFromCurrentItem()
     this.lastSyncedSongId = this.getCurrentSongId()
     await this.syncCurrentSongFromRepository()
+    console.info(`[PERF][Player] playPageInit cost=${Date.now() - startAt}ms`)
   }
 
   aboutToAppear() {
     void this.initPageData()
   }
 
-  @Monitor('playState')
+  @Monitor('playState.id')
   onSongStateChange() {
     const currentSongId = this.getCurrentSongId()
     if (!currentSongId || currentSongId === this.lastSyncedSongId) {
@@ -555,9 +559,11 @@ struct Play {
                     .selectedColor(this.themeState.getPlayPageForegroundColor())
                     .trackColor(this.themeState.getIsDark() ? '#66FFFFFF' : '#66000000')
                     .trackThickness(3)
-                    .onChange((value)=>{
-                      console.info('进度条被拖动，值为:', value)
-                      playManager.seekPlay(value)
+                    .onChange((value: number, mode: SliderChangeMode)=>{
+                      if (mode === SliderChangeMode.End || mode === SliderChangeMode.Click) {
+                        console.info('进度条被拖动完成，值为:', value)
+                        playManager.seekPlay(value)
+                      }
                     })
                   // 猫咪图标跟随进度条滑块移动，起点和终点与进度条一致
                   Image(this.playState.isPlay ? $r('app.media.catstart') : $r('app.media.catstop'))
