@@ -3,11 +3,11 @@
   "songs": [
     {
       "id": "local-demo-001",
-      "title": "My Licensed Test Track",
-      "singer": "Local Artist",
+      "title": "本地授权测试歌曲",
+      "singer": "本地歌手",
       "url": "https://example.invalid/replace-with-your-licensed-audio.mp3",
       "cover": "app.media.RecomMusic01",
-      "lyric": "[00:00.00]Replace this with your legally usable lyric line\n[00:08.00]This example file is safe to commit"
+      "lyric": "[00:00.00]请替换为你可合法使用的歌词\n[00:08.00]这个示例文件可以安全提交"
     }
   ]
 }

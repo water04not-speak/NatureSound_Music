@@ -50,7 +50,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onWindowStageCreate(windowStage: window.WindowStage) {
-    // Main window is created, set main page for this ability
+    // 主窗口创建后，初始化播放器、数据库和首页内容。
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
     
     // 准备播放器
@@ -86,7 +86,7 @@ export default class EntryAbility extends UIAbility {
       hilog.error(DOMAIN, 'testTag', '下载管理初始化失败: %{public}s', JSON.stringify(error));
     });
     
-    //配置加载哪个页面
+    // 配置应用启动后加载的首页。
     windowStage.loadContent('pages/Index', (err: Error) => {
       if (err) {
         hilog.error(DOMAIN, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err));
@@ -97,19 +97,18 @@ export default class EntryAbility extends UIAbility {
   }
 
   onWindowStageDestroy() {
-    // Main window is destroyed, release UI related resources
-    // 注销会话 和释放播放器
+    // 主窗口销毁时释放播放相关资源。
     this.shutdownPlaybackRuntime('onWindowStageDestroy');
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageDestroy');
   }
 
   onForeground() {
-    // Ability has brought to foreground
+    // 应用进入前台。
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onForeground');
   }
 
   onBackground() {
-    // Ability has back to background
+    // 应用进入后台时保存播放快照。
     void playbackSnapshotStore.save(playManager.currentSong)
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onBackground');
   }

@@ -40,7 +40,7 @@ for (const seed of heritageSeedSongs) {
 }
 
 /**
- * This class is the song-card structure used directly by pages.
+ * 页面直接使用的歌曲卡片结构。
  */
 export class SongItem {
   img: string
