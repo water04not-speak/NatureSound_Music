@@ -20,4 +20,6 @@ export interface SongItemType {
   lyrics?: string[]
   /** 带时间戳的歌词行（可选），用于与播放进度同步高亮 */
   lyricLines?: LyricLine[]
+  /** 歌词整体延迟毫秒数，用于处理歌曲前奏导致的时间轴偏移 */
+  lyricOffsetMs?: number
 }

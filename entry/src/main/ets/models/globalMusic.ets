@@ -16,6 +16,7 @@ export class GlobalMusic {
   @Trace isFavorite?: boolean
   @Trace lyrics?: string[]
   @Trace lyricLines?: LyricLine[]  // 当前播放链接
+  @Trace lyricOffsetMs: number = 0  // 歌词整体延迟毫秒数
   @Trace time: number = 0  // 播放时间
   @Trace duration: number = 0  // 歌曲总时长
 
@@ -41,6 +42,7 @@ export class GlobalMusic {
     this.lyric=undefined
     this.lyrics=undefined
     this.lyricLines=[]
+    this.lyricOffsetMs=0
     this.isFavorite=undefined
     this.time=0
     this.duration=0

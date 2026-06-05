@@ -64,7 +64,8 @@ export const heritageSeedSongs: MusicSongSeed[] = flatHeritageSeeds.map((item: H
     singer: item.singer,
     url: item.url,
     cover: item.cover,
-    lyric: findLyricBySongId(item.id)
+    lyric: findLyricBySongId(item.id),
+    lyricOffsetMs: item.lyricOffsetMs ?? 0
   }
   return seed
 })
@@ -81,7 +82,8 @@ export function getHeritageSongsByRegionId(regionId: string): SongItemType[] {
       title: item.title,
       singer: item.singer,
       cover: item.cover,
-      lyric: findLyricBySongId(item.id)
+      lyric: findLyricBySongId(item.id),
+      lyricOffsetMs: item.lyricOffsetMs ?? 0
     }
     return song
   })

@@ -43,7 +43,8 @@ struct Play {
       isFavorite: base.isFavorite,
       createTime: base.createTime,
       lyrics: base.lyrics,
-      lyricLines: base.lyricLines
+      lyricLines: base.lyricLines,
+      lyricOffsetMs: base.lyricOffsetMs
     }
 
     if (patch.img !== undefined) merged.img = patch.img
@@ -59,6 +60,7 @@ struct Play {
     if (patch.createTime !== undefined) merged.createTime = patch.createTime
     if (patch.lyrics !== undefined) merged.lyrics = patch.lyrics
     if (patch.lyricLines !== undefined) merged.lyricLines = patch.lyricLines
+    if (patch.lyricOffsetMs !== undefined) merged.lyricOffsetMs = patch.lyricOffsetMs
 
     return merged
   }
@@ -98,6 +100,7 @@ struct Play {
     this.playState.lyric = current.lyric
     this.playState.lyrics = current.lyrics
     this.playState.lyricLines = current.lyricLines
+    this.playState.lyricOffsetMs = current.lyricOffsetMs ?? 0
   }
 
   private async syncCurrentSongFromRepository(): Promise<void> {
@@ -116,16 +119,19 @@ struct Play {
       }
       const latestLyric = latest.lyric ?? ''
       const latestLyricLines = latest.lyricLines ?? []
+      const latestLyricOffsetMs = latest.lyricOffsetMs ?? 0
       this.playState.id = latest.id
       this.playState.isFavorite = latest.isFavorite
       this.playState.lyric = latestLyric
       this.playState.lyrics = latest.lyrics
       this.playState.lyricLines = latestLyricLines
+      this.playState.lyricOffsetMs = latestLyricOffsetMs
       this.updateSongInLists(songId, {
         isFavorite: latest.isFavorite,
         lyric: latestLyric,
         lyrics: latest.lyrics,
-        lyricLines: latestLyricLines
+        lyricLines: latestLyricLines,
+        lyricOffsetMs: latestLyricOffsetMs
       })
     } catch (error) {
       console.error('[Play] 同步歌曲状态失败:', JSON.stringify(error))
@@ -640,6 +646,7 @@ struct Play {
                           this.playState.name = firstSong.name
                           this.playState.author = firstSong.author
                           this.playState.url = firstSong.url
+                          this.playState.lyricOffsetMs = firstSong.lyricOffsetMs ?? 0
                           console.info('播放第一首歌曲:', firstSong.name)
                           playManager.singPlay(firstSong)
                         } else {

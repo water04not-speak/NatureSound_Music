@@ -286,6 +286,7 @@ class AvPlayerBridge {
       this.currentSong.lyric = undefined
       this.currentSong.lyrics = undefined
       this.currentSong.lyricLines = []
+      this.currentSong.lyricOffsetMs = 0
 
       const song = this.currentSong.playList[this.currentSong.playIndex]
       if (!song) {
@@ -306,6 +307,7 @@ class AvPlayerBridge {
       this.currentSong.lyric = song.lyric ?? ''
       this.currentSong.lyrics = song.lyrics
       this.currentSong.lyricLines = song.lyricLines ? [...song.lyricLines] : []
+      this.currentSong.lyricOffsetMs = song.lyricOffsetMs ?? 0
     
       if (!this.currentSong.lyricLines.length && song.lyric) {
         try {

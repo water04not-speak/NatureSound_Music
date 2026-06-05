@@ -49,8 +49,11 @@
 | `lyricLines` | 已解析好的带时间戳歌词行 |
 | `lyric` | LRC 文本，运行时解析成时间戳歌词 |
 | `lyrics` | 普通文本数组，根据歌曲时长做平均时间打点 |
+| `lyricOffsetMs` | 歌词整体延迟毫秒数，用于处理歌曲前奏导致的时间轴偏移 |
 
 当前实现优先根据当前播放歌曲 `id` 匹配歌词，找不到时才按播放列表索引兜底。切歌后会重置歌词缓存、当前高亮行和滚动进度，保证歌词和音乐对应。
+
+如果歌曲前面有较长前奏，可以在歌曲数据中配置 `lyricOffsetMs`。例如 `30000` 表示歌词整体延后 30 秒，页面计算高亮行时会使用“播放进度减去偏移值”来匹配歌词时间。
 
 ### 3. 数据持久化
 
@@ -80,6 +83,28 @@ entry/src/main/resources/rawfile/local_music.private.json
 ```
 
 该文件已被 `.gitignore` 忽略，不会随代码提交到 GitHub。建议只在本机或已确认授权的演示环境使用。
+
+私有资源配置支持全局歌词偏移和单曲歌词偏移：
+
+```json
+{
+  "replaceDefaultSeeds": true,
+  "defaultLyricOffsetMs": 30000,
+  "songs": [
+    {
+      "id": "local-demo-001",
+      "title": "本地授权测试歌曲",
+      "singer": "本地歌手",
+      "url": "file://合法授权音频路径",
+      "cover": "app.media.RecomMusic01",
+      "lyricOffsetMs": 30000,
+      "lyric": "[00:00.00]请替换为你可合法使用的歌词"
+    }
+  ]
+}
+```
+
+单曲的 `lyricOffsetMs` 会优先生效；没有配置时使用 `defaultLyricOffsetMs`。如果歌词提前，就把数值调大；如果歌词滞后，就把数值调小。
 
 ## 五、运行方式
 

@@ -36,6 +36,7 @@ export class MusicDatabase {
 
           try {
             await store.executeSql(this.getCreateTableSql())
+            await this.ensureLyricOffsetColumn(store)
             await store.executeSql(this.getCreateIndexSql('idx_music_songs_create_time', 'createTime'))
             await store.executeSql(this.getCreateIndexSql('idx_music_songs_favorite_create_time', 'isFavorite, createTime'))
             this.store = store
@@ -59,9 +60,18 @@ export class MusicDatabase {
       url TEXT NOT NULL,
       cover TEXT NOT NULL,
       lyric TEXT DEFAULT '',
+      lyricOffsetMs INTEGER NOT NULL DEFAULT 0,
       isFavorite INTEGER NOT NULL DEFAULT 0,
       createTime INTEGER NOT NULL
     )`
+  }
+
+  private async ensureLyricOffsetColumn(store: relationalStore.RdbStore): Promise<void> {
+    try {
+      await store.executeSql(`ALTER TABLE ${MusicDatabase.TABLE_NAME} ADD COLUMN lyricOffsetMs INTEGER NOT NULL DEFAULT 0`)
+    } catch (_error) {
+      // 已存在该字段时会进入这里，说明旧库已经完成过迁移。
+    }
   }
 
   private getCreateIndexSql(indexName: string, columns: string): string {

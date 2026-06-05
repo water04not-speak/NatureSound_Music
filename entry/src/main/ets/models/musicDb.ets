@@ -5,6 +5,7 @@ export interface MusicSongEntity {
   url: string
   cover: string
   lyric: string
+  lyricOffsetMs: number
   isFavorite: number
   createTime: number
 }
@@ -16,4 +17,5 @@ export interface MusicSongSeed {
   url: string
   cover: string
   lyric?: string
+  lyricOffsetMs?: number
 }

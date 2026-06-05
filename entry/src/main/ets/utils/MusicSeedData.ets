@@ -50,19 +50,22 @@ export class SongItem {
   id: string
   lyric?: string
 
-  constructor(img: string, name: string, author: string, url: string, id: string, lyric?: string) {
+  lyricOffsetMs?: number
+
+  constructor(img: string, name: string, author: string, url: string, id: string, lyric?: string, lyricOffsetMs?: number) {
     this.img = img
     this.name = name
     this.author = author
     this.url = url
     this.id = id
     this.lyric = lyric
+    this.lyricOffsetMs = lyricOffsetMs
   }
 }
 
 export function getDefaultSongItems(): SongItem[] {
   return defaultMusicSeeds.map((s: MusicSongSeed) => {
     const resolvedLyric = findLyricBySongId(s.id)
-    return new SongItem(s.cover, s.title, s.singer, s.url, s.id, resolvedLyric)
+    return new SongItem(s.cover, s.title, s.singer, s.url, s.id, resolvedLyric, s.lyricOffsetMs ?? 0)
   })
 }

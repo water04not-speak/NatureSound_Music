@@ -5,9 +5,12 @@ import { MusicSongSeed } from '../models/musicDb'
 const PRIVATE_MUSIC_RAWFILE = 'local_music.private.json'
 const MAX_PRIVATE_SONGS = 200
 const MAX_LYRIC_LENGTH = 50000
+const MIN_LYRIC_OFFSET_MS = -30000
+const MAX_LYRIC_OFFSET_MS = 120000
 
 interface LocalPrivateMusicJson {
   replaceDefaultSeeds?: boolean
+  defaultLyricOffsetMs?: number
   songs?: MusicSongSeed[]
 }
 
@@ -48,14 +51,26 @@ function isValidSeed(seed: MusicSongSeed): boolean {
     && (!seed.lyric || seed.lyric.length <= MAX_LYRIC_LENGTH)
 }
 
-function normalizeSeed(seed: MusicSongSeed): MusicSongSeed {
+function normalizeLyricOffset(value: number | undefined, fallback: number): number {
+  const raw = typeof value === 'number' && isFinite(value) ? value : fallback
+  if (raw < MIN_LYRIC_OFFSET_MS) {
+    return MIN_LYRIC_OFFSET_MS
+  }
+  if (raw > MAX_LYRIC_OFFSET_MS) {
+    return MAX_LYRIC_OFFSET_MS
+  }
+  return Math.round(raw)
+}
+
+function normalizeSeed(seed: MusicSongSeed, defaultLyricOffsetMs: number): MusicSongSeed {
   const normalized: MusicSongSeed = {
     id: seed.id.trim(),
     title: seed.title.trim(),
     singer: seed.singer.trim(),
     url: seed.url.trim(),
     cover: seed.cover.trim(),
-    lyric: seed.lyric
+    lyric: seed.lyric,
+    lyricOffsetMs: normalizeLyricOffset(seed.lyricOffsetMs, defaultLyricOffsetMs)
   }
   return normalized
 }
@@ -70,10 +85,11 @@ export async function loadLocalPrivateMusicConfig(context: common.UIAbilityConte
   try {
     const raw = await context.resourceManager.getRawFileContent(PRIVATE_MUSIC_RAWFILE)
     const parsed = JSON.parse(decodeUtf8(raw)) as LocalPrivateMusicJson
+    const defaultLyricOffsetMs = normalizeLyricOffset(parsed.defaultLyricOffsetMs, 0)
     const rawSongs = (parsed.songs ?? []).slice(0, MAX_PRIVATE_SONGS)
     const seeds = rawSongs
       .filter((seed: MusicSongSeed) => isValidSeed(seed))
-      .map((seed: MusicSongSeed) => normalizeSeed(seed))
+      .map((seed: MusicSongSeed) => normalizeSeed(seed, defaultLyricOffsetMs))
 
     if (seeds.length === 0) {
       const fallbackConfig: LocalPrivateMusicConfig = {

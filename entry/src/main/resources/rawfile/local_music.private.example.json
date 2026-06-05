@@ -1,5 +1,6 @@
 {
   "replaceDefaultSeeds": true,
+  "defaultLyricOffsetMs": 30000,
   "songs": [
     {
       "id": "local-demo-001",
@@ -7,6 +8,7 @@
       "singer": "本地歌手",
       "url": "https://example.invalid/replace-with-your-licensed-audio.mp3",
       "cover": "app.media.RecomMusic01",
+      "lyricOffsetMs": 30000,
       "lyric": "[00:00.00]请替换为你可合法使用的歌词\n[00:08.00]这个示例文件可以安全提交"
     }
   ]

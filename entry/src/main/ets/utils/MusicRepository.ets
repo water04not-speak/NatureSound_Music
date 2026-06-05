@@ -56,6 +56,7 @@ export class MusicRepository {
             url: seed.url,
             cover: seed.cover,
             lyric: resolvedLyric,
+            lyricOffsetMs: seed.lyricOffsetMs ?? 0,
             isFavorite: 0,
             createTime: baseTime + index
           })
@@ -89,6 +90,7 @@ export class MusicRepository {
           url: seed.url,
           cover: seed.cover,
           lyric: resolvedLyric,
+          lyricOffsetMs: seed.lyricOffsetMs ?? 0,
           isFavorite: 0,
           createTime: baseTime + index
         })
@@ -102,6 +104,7 @@ export class MusicRepository {
         || current.url !== seed.url
         || current.cover !== seed.cover
         || current.lyric !== nextLyric
+        || current.lyricOffsetMs !== (seed.lyricOffsetMs ?? 0)
 
       if (!shouldUpdate) {
         continue
@@ -114,6 +117,7 @@ export class MusicRepository {
         url: seed.url,
         cover: seed.cover,
         lyric: nextLyric,
+        lyricOffsetMs: seed.lyricOffsetMs ?? 0,
         isFavorite: current.isFavorite,
         createTime: current.createTime
       })
@@ -203,7 +207,7 @@ export class MusicRepository {
       const store = await musicDatabase.getStore(context)
       const likeKeyword = `%${normalized}%`
       const rs = await store.querySql(
-        `SELECT id, title, singer, url, cover, lyric, isFavorite, createTime FROM ${MusicDatabase.TABLE_NAME} WHERE title LIKE ? OR singer LIKE ? ORDER BY createTime ASC LIMIT ${limit} OFFSET ${offset}`,
+        `SELECT id, title, singer, url, cover, lyric, lyricOffsetMs, isFavorite, createTime FROM ${MusicDatabase.TABLE_NAME} WHERE title LIKE ? OR singer LIKE ? ORDER BY createTime ASC LIMIT ${limit} OFFSET ${offset}`,
         [likeKeyword, likeKeyword]
       )
       const songs = this.mapEntitiesToSongItems(this.readResultSet(rs))
@@ -252,6 +256,7 @@ export class MusicRepository {
         url: current.url,
         cover: current.cover,
         lyric: current.lyric,
+        lyricOffsetMs: current.lyricOffsetMs,
         isFavorite: current.isFavorite === 1 ? 0 : 1,
         createTime: current.createTime
       }
@@ -269,6 +274,7 @@ export class MusicRepository {
   async replaceAll(context: common.UIAbilityContext, songs: MusicSongSeed[]): Promise<void> {
     try {
       const store = await musicDatabase.getStore(context)
+      const seedIdSet: Set<string> = new Set(songs.map((song: MusicSongSeed) => song.id))
       const baseTime = Date.now() - songs.length
       let index = 0
       for (const song of songs) {
@@ -280,10 +286,17 @@ export class MusicRepository {
           url: song.url,
           cover: song.cover,
           lyric: resolvedLyric,
+          lyricOffsetMs: song.lyricOffsetMs ?? 0,
           isFavorite: 0,
           createTime: baseTime + index
         })
         index++
+      }
+      const allSongs = await this.queryAll(store)
+      for (const song of allSongs) {
+        if (!seedIdSet.has(song.id)) {
+          await this.deleteByIdInternal(store, song.id)
+        }
       }
       this.allSongsCache = undefined
       this.songCache.clear()
@@ -313,7 +326,7 @@ export class MusicRepository {
   private async queryAll(store: relationalStore.RdbStore): Promise<MusicSongEntity[]> {
     try {
       const rs = await store.querySql(
-        `SELECT id, title, singer, url, cover, lyric, isFavorite, createTime FROM ${MusicDatabase.TABLE_NAME} ORDER BY createTime ASC`
+        `SELECT id, title, singer, url, cover, lyric, lyricOffsetMs, isFavorite, createTime FROM ${MusicDatabase.TABLE_NAME} ORDER BY createTime ASC`
       )
       return this.readResultSet(rs)
     } catch (error) {
@@ -325,7 +338,7 @@ export class MusicRepository {
   private async queryByFavorite(store: relationalStore.RdbStore, favorite: number): Promise<MusicSongEntity[]> {
     try {
       const rs = await store.querySql(
-        `SELECT id, title, singer, url, cover, lyric, isFavorite, createTime FROM ${MusicDatabase.TABLE_NAME} WHERE isFavorite = ? ORDER BY createTime ASC`,
+        `SELECT id, title, singer, url, cover, lyric, lyricOffsetMs, isFavorite, createTime FROM ${MusicDatabase.TABLE_NAME} WHERE isFavorite = ? ORDER BY createTime ASC`,
         [String(favorite)]
       )
       return this.readResultSet(rs)
@@ -338,7 +351,7 @@ export class MusicRepository {
   private async queryOne(store: relationalStore.RdbStore, id: string): Promise<MusicSongEntity | undefined> {
     try {
       const rs = await store.querySql(
-        `SELECT id, title, singer, url, cover, lyric, isFavorite, createTime FROM ${MusicDatabase.TABLE_NAME} WHERE id = ? LIMIT 1`,
+        `SELECT id, title, singer, url, cover, lyric, lyricOffsetMs, isFavorite, createTime FROM ${MusicDatabase.TABLE_NAME} WHERE id = ? LIMIT 1`,
         [id]
       )
       const list = this.readResultSet(rs)
@@ -358,6 +371,7 @@ export class MusicRepository {
         url: song.url,
         cover: song.cover,
         lyric: song.lyric,
+        lyricOffsetMs: song.lyricOffsetMs,
         isFavorite: song.isFavorite,
         createTime: song.createTime
       }
@@ -376,6 +390,7 @@ export class MusicRepository {
         url: song.url,
         cover: song.cover,
         lyric: song.lyric,
+        lyricOffsetMs: song.lyricOffsetMs,
         isFavorite: song.isFavorite,
         createTime: song.createTime
       }
@@ -417,6 +432,7 @@ export class MusicRepository {
           url: resultSet.getString(resultSet.getColumnIndex('url')),
           cover: resultSet.getString(resultSet.getColumnIndex('cover')),
           lyric: resultSet.getString(resultSet.getColumnIndex('lyric')),
+          lyricOffsetMs: resultSet.getLong(resultSet.getColumnIndex('lyricOffsetMs')),
           isFavorite: resultSet.getLong(resultSet.getColumnIndex('isFavorite')),
           createTime: resultSet.getLong(resultSet.getColumnIndex('createTime'))
         })
@@ -436,6 +452,7 @@ export class MusicRepository {
       url: entity.url,
       img: entity.cover,
       lyric: entity.lyric,
+      lyricOffsetMs: entity.lyricOffsetMs,
       isFavorite: entity.isFavorite === 1,
       createTime: entity.createTime,
       title: entity.title,

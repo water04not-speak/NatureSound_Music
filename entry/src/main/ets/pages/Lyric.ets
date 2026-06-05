@@ -108,7 +108,7 @@ export struct Lyric {
   calcCurrentLyricIndex(): number {
     const lines = this.getLyricLines()
     if (!lines || lines.length === 0) return -1
-    const t = this.playState.time
+    const t = Math.max(0, this.playState.time - this.getCurrentLyricOffsetMs())
     for (let i = lines.length - 1; i >= 0; i--) {
       // 找到第一句时间小于等于当前播放时间的歌词
       if (lines[i].time <= t) return i
@@ -188,6 +188,14 @@ export struct Lyric {
     return list[idx]
   }
 
+  private getCurrentLyricOffsetMs(): number {
+    const song = this.getCurrentSongFromState()
+    if (song && song.lyricOffsetMs !== undefined) {
+      return song.lyricOffsetMs
+    }
+    return this.playState.lyricOffsetMs ?? 0
+  }
+
   private getHighlightedCharCount(text: string, index: number): number {
     if (index !== this.currentIndex) {
       return 0
@@ -248,7 +256,7 @@ export struct Lyric {
     const sourceDuration = this.playState.duration > 0 ? this.playState.duration : 0
     const sourcePlainArrayLen = song.lyrics ? song.lyrics.length : 0
     const sourceStateLineLen = songMatchesState && this.playState.lyricLines ? this.playState.lyricLines.length : 0
-    const cacheKey = `${this.getCurrentSongKey()}|${sourceDuration}|${sourceLyric.length}|${sourcePlainArrayLen}|${sourceStateLineLen}`
+    const cacheKey = `${this.getCurrentSongKey()}|${sourceDuration}|${sourceLyric.length}|${sourcePlainArrayLen}|${sourceStateLineLen}|${this.getCurrentLyricOffsetMs()}`
 
     if (cacheKey === this.cachedLyricKey && this.cachedLyricLines.length > 0) {
       return this.cachedLyricLines
