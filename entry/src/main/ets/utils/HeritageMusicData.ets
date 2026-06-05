@@ -58,7 +58,7 @@ Object.keys(heritageSeedsByRegion).forEach((regionId: string) => {
 })
 
 export const heritageSeedSongs: MusicSongSeed[] = flatHeritageSeeds.map((item: HeritageSeed) => {
-  return {
+  const seed: MusicSongSeed = {
     id: item.id,
     title: item.title,
     singer: item.singer,
@@ -66,12 +66,13 @@ export const heritageSeedSongs: MusicSongSeed[] = flatHeritageSeeds.map((item: H
     cover: item.cover,
     lyric: findLyricBySongId(item.id)
   }
+  return seed
 })
 
 export function getHeritageSongsByRegionId(regionId: string): SongItemType[] {
   const list = heritageSeedsByRegion[regionId] ?? []
   return list.map((item: HeritageSeed) => {
-    return {
+    const song: SongItemType = {
       id: item.id,
       name: item.title,
       author: item.singer,
@@ -82,5 +83,6 @@ export function getHeritageSongsByRegionId(regionId: string): SongItemType[] {
       cover: item.cover,
       lyric: findLyricBySongId(item.id)
     }
+    return song
   })
 }

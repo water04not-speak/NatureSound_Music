@@ -49,7 +49,7 @@ function isValidSeed(seed: MusicSongSeed): boolean {
 }
 
 function normalizeSeed(seed: MusicSongSeed): MusicSongSeed {
-  return {
+  const normalized: MusicSongSeed = {
     id: seed.id.trim(),
     title: seed.title.trim(),
     singer: seed.singer.trim(),
@@ -57,6 +57,7 @@ function normalizeSeed(seed: MusicSongSeed): MusicSongSeed {
     cover: seed.cover.trim(),
     lyric: seed.lyric
   }
+  return normalized
 }
 
 /**
@@ -75,20 +76,23 @@ export async function loadLocalPrivateMusicConfig(context: common.UIAbilityConte
       .map((seed: MusicSongSeed) => normalizeSeed(seed))
 
     if (seeds.length === 0) {
-      return {
+      const fallbackConfig: LocalPrivateMusicConfig = {
         replaceDefaultSeeds: false,
         seeds: fallbackSeeds
       }
+      return fallbackConfig
     }
 
-    return {
+    const privateConfig: LocalPrivateMusicConfig = {
       replaceDefaultSeeds: parsed.replaceDefaultSeeds !== false,
       seeds
     }
+    return privateConfig
   } catch (_error) {
-    return {
+    const fallbackConfig: LocalPrivateMusicConfig = {
       replaceDefaultSeeds: false,
       seeds: fallbackSeeds
     }
+    return fallbackConfig
   }
 }
