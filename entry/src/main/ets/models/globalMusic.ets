@@ -37,6 +37,11 @@ export class GlobalMusic {
     this.name=''
     this.author=''
     this.url=''
+    this.id=''
+    this.lyric=undefined
+    this.lyrics=undefined
+    this.lyricLines=[]
+    this.isFavorite=undefined
     this.time=0
     this.duration=0
     this.playIndex=0

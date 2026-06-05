@@ -18,7 +18,7 @@ export function LyricBuilder() {
  */
 @ComponentV2
 export struct Lyric {
-  // Swiper 的索引，用于配合外部滑动翻页
+  // 滑动容器索引，用于配合外部滑动翻页
   @Param swiperIndex: number = 1
   // 返回原页面的事件回调
   @Event onBack: () => void = () => {}
@@ -36,6 +36,7 @@ export struct Lyric {
   private cachedLyricKey: string = ''
   private cachedLyricLines: LyricLine[] = []
   private lyricTickId: number = -1
+  private lastLyricSongKey: string = ''
 
   /**
    * 【通俗解释】用轻量定时器轮询播放时间，确保歌词滚动在所有机型都稳定触发。
@@ -44,6 +45,7 @@ export struct Lyric {
     if (this.swiperIndex !== 1) {
       return
     }
+    this.resetLyricCacheIfSongChanged()
     if (this.playState.time === this.lastObservedTime) {
       return
     }
@@ -148,6 +150,44 @@ export struct Lyric {
     return Array.from(text)
   }
 
+  private getCurrentSongKey(): string {
+    if (this.playState.id && this.playState.id.trim().length > 0) {
+      return this.playState.id
+    }
+    return `${this.playState.playIndex}|${this.playState.url}`
+  }
+
+  private resetLyricCacheIfSongChanged(): void {
+    const songKey = this.getCurrentSongKey()
+    if (songKey === this.lastLyricSongKey) {
+      return
+    }
+    this.lastLyricSongKey = songKey
+    this.cachedLyricKey = ''
+    this.cachedLyricLines = []
+    this.currentIndex = -1
+    this.lineHighlightProgress = 0
+    this.lastObservedTime = -1
+  }
+
+  private getCurrentSongFromState(): SongItemType | undefined {
+    const list = this.playState.playList
+    if (!list.length) {
+      return undefined
+    }
+    if (this.playState.id && this.playState.id.trim().length > 0) {
+      const matched = list.find((song: SongItemType) => song.id === this.playState.id)
+      if (matched) {
+        return matched
+      }
+    }
+    const idx = this.playState.playIndex
+    if (idx < 0 || idx >= list.length) {
+      return undefined
+    }
+    return list[idx]
+  }
+
   private getHighlightedCharCount(text: string, index: number): number {
     if (index !== this.currentIndex) {
       return 0
@@ -199,16 +239,16 @@ export struct Lyric {
    * 支持直接按时间戳的 LyricLine，或者是均分时间的模拟 lyrics 数组
    */
   getLyricLines(): LyricLine[] {
-    const list = this.playState.playList
-    const idx = this.playState.playIndex
-    if (!list.length || idx < 0 || idx >= list.length) {
+    const song = this.getCurrentSongFromState()
+    if (!song) {
       return []
     }
-    const song: SongItemType = list[idx]
-    const sourceLyric = (song.lyric ?? this.playState.lyric ?? '').trim()
+    const songMatchesState = !this.playState.id || song.id === this.playState.id
+    const sourceLyric = ((song.lyric && song.lyric.trim().length > 0) ? song.lyric : (songMatchesState ? this.playState.lyric ?? '' : '')).trim()
     const sourceDuration = this.playState.duration > 0 ? this.playState.duration : 0
     const sourcePlainArrayLen = song.lyrics ? song.lyrics.length : 0
-    const cacheKey = `${song.id}|${sourceDuration}|${sourceLyric.length}|${sourcePlainArrayLen}`
+    const sourceStateLineLen = songMatchesState && this.playState.lyricLines ? this.playState.lyricLines.length : 0
+    const cacheKey = `${this.getCurrentSongKey()}|${sourceDuration}|${sourceLyric.length}|${sourcePlainArrayLen}|${sourceStateLineLen}`
 
     if (cacheKey === this.cachedLyricKey && this.cachedLyricLines.length > 0) {
       return this.cachedLyricLines
@@ -220,7 +260,7 @@ export struct Lyric {
       return this.cachedLyricLines
     }
 
-    if (this.playState.lyricLines && this.playState.lyricLines.length > 0) {
+    if (songMatchesState && this.playState.lyricLines && this.playState.lyricLines.length > 0) {
       this.cachedLyricKey = cacheKey
       this.cachedLyricLines = this.getDisplayLines(this.playState.lyricLines)
       return this.cachedLyricLines
@@ -247,8 +287,9 @@ export struct Lyric {
     }
 
     // 如果只有纯文本数组，通过总时长平均估算时间打点（降级兼容方案）
-    if (song.lyrics && song.lyrics.length > 0) {
-      const rawLines = song.lyrics.map((line: string) => this.stripLrcTags(line)).filter((line: string) => line.length > 0)
+    const plainLyrics = song.lyrics ?? (songMatchesState ? this.playState.lyrics : undefined)
+    if (plainLyrics && plainLyrics.length > 0) {
+      const rawLines = plainLyrics.map((line: string) => this.stripLrcTags(line)).filter((line: string) => line.length > 0)
       this.cachedLyricKey = cacheKey
       this.cachedLyricLines = this.buildEvenLines(rawLines, sourceDuration)
       return this.cachedLyricLines

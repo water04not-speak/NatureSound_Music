@@ -64,7 +64,7 @@ struct Play {
   }
 
   private getCurrentSongItem(): SongItemType | undefined {
-    // 【通俗解释】先从“当前播放队列”拿歌；拿不到时再按URL去全量列表兜底。
+    // 【通俗解释】先从“当前播放队列”拿歌；拿不到时再按播放地址去全量列表兜底。
     if (this.playState.playList.length > 0 && this.playState.playIndex >= 0 && this.playState.playIndex < this.playState.playList.length) {
       return this.playState.playList[this.playState.playIndex]
     }
@@ -114,16 +114,18 @@ struct Play {
       if (!latest) {
         return
       }
+      const latestLyric = latest.lyric ?? ''
+      const latestLyricLines = latest.lyricLines ?? []
       this.playState.id = latest.id
       this.playState.isFavorite = latest.isFavorite
-      if (latest.lyric && latest.lyric.trim().length > 0) {
-        this.playState.lyric = latest.lyric
-      }
+      this.playState.lyric = latestLyric
+      this.playState.lyrics = latest.lyrics
+      this.playState.lyricLines = latestLyricLines
       this.updateSongInLists(songId, {
         isFavorite: latest.isFavorite,
-        lyric: latest.lyric,
+        lyric: latestLyric,
         lyrics: latest.lyrics,
-        lyricLines: latest.lyricLines
+        lyricLines: latestLyricLines
       })
     } catch (error) {
       console.error('[Play] 同步歌曲状态失败:', JSON.stringify(error))
@@ -161,7 +163,7 @@ struct Play {
   }
 
   private async downloadCurrentSong(): Promise<void> {
-    // 【通俗解释】下载按钮只做“触发下载任务”，真正下载、进度和缓存记录由 DownloadManager 统一处理。
+    // 【通俗解释】下载按钮只做“触发下载任务”，真正下载、进度和缓存记录由下载管理器统一处理。
     const current = this.getCurrentSongItem()
     if (!current || !current.id) {
       return
@@ -218,9 +220,6 @@ struct Play {
     this.lastSyncedSongId = currentSongId
     void this.syncCurrentSongFromRepository()
   }
-  // playState:SongItemType = this.songs[0]
-
-
   @Builder
   deleteButton(index: number) {
     Button('删除')
@@ -679,7 +678,7 @@ struct Play {
         }
         .width('100%')
         .height('100%')
-      } // Close Stack
+      } // 播放页背景和内容区域结束
 
       // 歌词页面
       Lyric({
@@ -688,14 +687,14 @@ struct Play {
           this.swiperIndex = 0
         }
       })
-    } // Close Swiper
+    } // 播放页和歌词页滑动容器结束
     .onChange((i: number) => { this.swiperIndex = i })
     .indicator(false)
     .loop(false)
     .width('100%')
     .height('100%')
     .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
-  } // Close NavDestination
+  } // 播放导航页面结束
   .onReady((context: NavDestinationContext) => {
       this.pathStack = context.pathStack
     })

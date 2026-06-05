@@ -93,6 +93,7 @@
 
 - [架构说明](docs/ARCHITECTURE.md)：工程分层、播放链路、数据持久化与非遗模块说明。
 - [面试讲解稿](docs/INTERVIEW_GUIDE.md)：项目介绍、简历描述、高频问题回答方向。
+- [项目说明书](docs/PROJECT_MANUAL.md)：项目背景、技术栈、核心模块、运行方式和讲解建议。
 - [仓库发布清单](docs/REPOSITORY_CHECKLIST.md)：GitHub 发布前需要保留和排除的文件。
 - [资源占位说明](docs/ASSETS_NOTICE.md)：公开仓库不包含完整版权素材的说明。
 - [截图说明](docs/screenshots/README.md)：README 页面截图命名与维护规则。

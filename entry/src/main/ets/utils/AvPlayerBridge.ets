@@ -283,6 +283,9 @@ class AvPlayerBridge {
 
       this.currentSong.duration = 0
       this.currentSong.time = 0
+      this.currentSong.lyric = undefined
+      this.currentSong.lyrics = undefined
+      this.currentSong.lyricLines = []
 
       const song = this.currentSong.playList[this.currentSong.playIndex]
       if (!song) {
@@ -300,9 +303,9 @@ class AvPlayerBridge {
       this.currentSong.url = this.normalizeStreamUrl(song.url)
       this.currentSong.id = song.id
       this.currentSong.isFavorite = song.isFavorite
-      this.currentSong.lyric = song.lyric
+      this.currentSong.lyric = song.lyric ?? ''
       this.currentSong.lyrics = song.lyrics
-      this.currentSong.lyricLines = song.lyricLines || []
+      this.currentSong.lyricLines = song.lyricLines ? [...song.lyricLines] : []
     
       if (!this.currentSong.lyricLines.length && song.lyric) {
         try {
