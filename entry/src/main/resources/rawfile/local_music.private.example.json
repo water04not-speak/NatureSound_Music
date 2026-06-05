@@ -1,0 +1,13 @@
+{
+  "replaceDefaultSeeds": true,
+  "songs": [
+    {
+      "id": "local-demo-001",
+      "title": "My Licensed Test Track",
+      "singer": "Local Artist",
+      "url": "https://example.invalid/replace-with-your-licensed-audio.mp3",
+      "cover": "app.media.RecomMusic01",
+      "lyric": "[00:00.00]Replace this with your legally usable lyric line\n[00:08.00]This example file is safe to commit"
+    }
+  ]
+}

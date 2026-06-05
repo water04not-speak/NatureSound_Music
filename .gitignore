@@ -22,6 +22,9 @@ albums/
 downloads/
 cache/
 
+# Local private music config for personal playback only
+entry/src/main/resources/rawfile/local_music.private.json
+
 # HarmonyOS / DevEco Studio build output
 .hvigor/
 oh_modules/
