@@ -13,10 +13,6 @@
       "value": "万物之声"
     },
     {
-      "name": "microphone_permission_reason",
-      "value": "需要访问麦克风权限以录制音频内容并发布到论坛"
-    },
-    {
       "name": "read_media_permission_reason",
       "value": "需要读取媒体文件权限以播放音乐和查看图片"
     },

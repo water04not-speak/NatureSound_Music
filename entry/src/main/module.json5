@@ -8,14 +8,6 @@
         "name": "ohos.permission.KEEP_BACKGROUND_RUNNING"
       },
       {
-        "name": "ohos.permission.MICROPHONE",
-        "reason": "$string:microphone_permission_reason",
-        "usedScene": {
-          "abilities": ["EntryAbility"],
-          "when": "inuse"
-        }
-      },
-      {
         "name": "ohos.permission.READ_MEDIA",
         "reason": "$string:read_media_permission_reason",
         "usedScene": {
