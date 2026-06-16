@@ -24,6 +24,14 @@ cache/
 
 # Local private music config for personal playback only
 entry/src/main/resources/rawfile/local_music.private.json
+entry/src/main/resources/rawfile/local_heritage.private.json
+entry/src/main/resources/rawfile/local_forum.private.json
+entry/src/main/resources/rawfile/private/
+*.private.json
+local_*.private.json
+entry/src/main/ets/private/LocalPrivateData.ets
+private/
+local_private/
 
 # HarmonyOS / DevEco Studio build output
 .hvigor/

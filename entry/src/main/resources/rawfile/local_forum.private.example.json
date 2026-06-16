@@ -1,0 +1,23 @@
+{
+  "note": "Copy this file to local_forum.private.json and fill it with your local demo posts. Do not include private user data or unlicensed media. The private file is ignored by Git.",
+  "moments": [
+    {
+      "id": "private-forum-example-001",
+      "author": "本地演示用户",
+      "avatar": "app.media.ic_moment",
+      "image": "private/forum/example-authorized-post-image.png",
+      "content": "这里可以填写你本地演示用的授权内容，不会提交到公开仓库。",
+      "like": 12,
+      "songId": "private-heritage-example-001",
+      "songCover": "private/covers/example-authorized-cover.png",
+      "comments": [
+        {
+          "author": "本地评论示例",
+          "avatar": "app.media.ic_comment",
+          "content": "评论内容也应避免真实隐私和侵权素材。",
+          "like": 3
+        }
+      ]
+    }
+  ]
+}

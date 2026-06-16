@@ -4,7 +4,7 @@ import { ThemeState } from '../models/theme'
 import { SongItemType } from '../models/music'
 import { getScreenWidthVp, resolveByScreenWidth } from '../utils/ScreenUtils'
 import { getDefaultSongItems } from '../utils/MusicSeedData'
-import { getHeritageSongsByRegionId } from '../utils/HeritageMusicData'
+import { getHeritageSongsByRegionId, loadLocalHeritageSongsByRegion } from '../utils/HeritageMusicData'
 import { HeritageRegionParams } from './HeritageRegionDetail'
 
 interface HeritageRegionItem {
@@ -24,16 +24,17 @@ export struct MusicFeast {
   themeState: ThemeState = AppStorageV2.connect(ThemeState, 'THEME_STATE', () => new ThemeState())!
   pathStack: NavPathStack = AppStorageV2.connect(NavPathStack, 'navStack', () => new NavPathStack())!
   private readonly songPool: SongItemType[] = getDefaultSongItems()
+  @Local private localHeritageSongsByRegion: Record<string, SongItemType[]> = {}
 
   private readonly regionFallbackIds: Record<string, string[]> = {
-    'yangtze-delta': ['demo-heritage-001'],
-    'guangdong-hk-macao': ['demo-heritage-002'],
-    'chengdu-chongqing': ['demo-heritage-003'],
-    'yangtze-mid': ['demo-heritage-004'],
-    'ancient-style': ['demo-playlist-001', 'demo-heritage-001'],
-    'modern-style': ['demo-ambient-001', 'demo-ambient-002'],
-    'wuxia-style': ['demo-playlist-002', 'demo-heritage-003'],
-    'folk-style': ['demo-playlist-001', 'demo-heritage-004']
+    'yangtze-delta': ['demo-heritage-001', 'demo-heritage-005'],
+    'guangdong-hk-macao': ['demo-heritage-002', 'demo-heritage-006'],
+    'chengdu-chongqing': ['demo-heritage-003', 'demo-heritage-007'],
+    'yangtze-mid': ['demo-heritage-004', 'demo-heritage-008'],
+    'ancient-style': ['demo-heritage-009', 'demo-heritage-010'],
+    'modern-style': ['demo-heritage-011', 'demo-heritage-012'],
+    'wuxia-style': ['demo-heritage-013', 'demo-heritage-014'],
+    'folk-style': ['demo-heritage-015', 'demo-heritage-016']
   }
 
   @Local private regionList: HeritageRegionItem[] = [
@@ -65,25 +66,25 @@ export struct MusicFeast {
       id: 'ancient-style',
       name: '古风音乐',
       cover: $r('app.media.gf01'),
-      description: '古典乐器、传统曲调、古风流行'
+      description: '箫声、山水意象与传统器乐氛围'
     },
     {
       id: 'modern-style',
       name: '现代音乐',
       cover: $r('app.media.xd01'),
-      description: '流行歌曲、电子音乐、摇滚风格'
+      description: '城市声景、电子律动与自然采样'
     },
     {
       id: 'wuxia-style',
       name: '武侠音乐',
       cover: $r('app.media.wx01'),
-      description: '江湖豪情、侠骨柔情、武侠剧配乐'
+      description: '竹林、江湖与器乐叙事片段'
     },
     {
       id: 'folk-style',
       name: '民谣音乐',
       cover: $r('app.media.my01'),
-      description: '民间歌谣、地方特色、生活故事'
+      description: '田野采风、生活节奏与木吉他片段'
     }
   ]
 
@@ -101,12 +102,21 @@ export struct MusicFeast {
       isFavorite: song.isFavorite,
       createTime: song.createTime,
       lyrics: song.lyrics,
-      lyricLines: song.lyricLines
+      lyricLines: song.lyricLines,
+      lyricOffsetMs: song.lyricOffsetMs
     }
   }
 
   private resolveRegionSongs(region: HeritageRegionItem): SongItemType[] {
     const unique: Record<string, SongItemType> = {}
+
+    const localSongs = this.localHeritageSongsByRegion[region.id] ?? []
+    if (localSongs.length > 0) {
+      for (const song of localSongs) {
+        unique[song.id] = this.ensurePlayableSong(song)
+      }
+      return Object.values(unique)
+    }
 
     const heritageSongs = getHeritageSongsByRegionId(region.id)
     for (const song of heritageSongs) {
@@ -230,6 +240,12 @@ export struct MusicFeast {
     .onAppear(() => {
       const abilityCtx = getContext(this) as common.UIAbilityContext
       void this.themeState.initFromContext(abilityCtx)
+      void loadLocalHeritageSongsByRegion(abilityCtx).then((songsByRegion: Record<string, SongItemType[]>) => {
+        this.localHeritageSongsByRegion = songsByRegion
+      }).catch((error: Error) => {
+        console.warn('[MusicFeast] Failed to load local heritage private config:', error.message)
+        this.localHeritageSongsByRegion = {}
+      })
     })
   }
 }

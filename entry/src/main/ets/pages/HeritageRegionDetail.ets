@@ -1,11 +1,12 @@
 // 声宴 - 板块详情页，展示当前板块歌曲列表
 
 import { AppStorageV2 } from '@kit.ArkUI'
+import common from '@ohos.app.ability.common'
 import { SongItemType } from '../models/music'
 import { playManager } from '../utils/AvPlayerManager'
 import { ThemeState } from '../models/theme'
 import { getScreenHeightVp, getScreenWidthVp, resolveByScreenHeight, resolveByScreenWidth } from '../utils/ScreenUtils'
-import { getHeritageSongsByRegionId } from '../utils/HeritageMusicData'
+import { getHeritageSongsByRegionId, loadLocalHeritageSongsByRegionId } from '../utils/HeritageMusicData'
 
 // 地域参数类
 export class HeritageRegionParams {
@@ -27,7 +28,8 @@ struct HeritageRegionDetail {
   themeState: ThemeState = AppStorageV2.connect(ThemeState, 'THEME_STATE', () => new ThemeState())!
   regionParams: HeritageRegionParams = AppStorageV2.connect(HeritageRegionParams, 'heritageRegionParams',
     () => new HeritageRegionParams())!
-  private readonly heritageRegionIds: Set<string> = new Set([
+  @Local private localHeritageSongs: SongItemType[] = []
+  private readonly traditionalRegionIds: Set<string> = new Set([
     'yangtze-delta',
     'guangdong-hk-macao',
     'chengdu-chongqing',
@@ -38,14 +40,14 @@ struct HeritageRegionDetail {
     if (this.regionParams.songs && this.regionParams.songs.length > 0) {
       return this.regionParams.songs
     }
-    if (this.heritageRegionIds.has(this.regionParams.regionId)) {
-      return getHeritageSongsByRegionId(this.regionParams.regionId)
+    if (this.localHeritageSongs.length > 0) {
+      return this.localHeritageSongs
     }
-    return []
+    return getHeritageSongsByRegionId(this.regionParams.regionId)
   }
 
   get sectionTitle(): string {
-    if (this.heritageRegionIds.has(this.regionParams.regionId)) {
+    if (this.traditionalRegionIds.has(this.regionParams.regionId)) {
       return '非遗曲目'
     }
     return '音乐曲目'
@@ -58,6 +60,16 @@ struct HeritageRegionDetail {
 
   private getCoverSize(): number {
     return resolveByScreenWidth(getScreenWidthVp(), 120, 140, 140)
+  }
+
+  aboutToAppear(): void {
+    const abilityCtx = getContext(this) as common.UIAbilityContext
+    void loadLocalHeritageSongsByRegionId(abilityCtx, this.regionParams.regionId).then((songs: SongItemType[]) => {
+      this.localHeritageSongs = songs
+    }).catch((error: Error) => {
+      console.warn('[HeritageRegionDetail] Failed to load local heritage private config:', error.message)
+      this.localHeritageSongs = []
+    })
   }
 
   build() {

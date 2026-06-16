@@ -7,29 +7,29 @@ const DEMO_AUDIO_BASE = 'https://example.invalid/nature-sound/legal-assets'
 export const defaultMusicSeeds: MusicSongSeed[] = [
   {
     id: 'demo-ambient-001',
-    title: 'Demo Ambient Stream',
+    title: '林间晨雾',
     singer: 'NatureSound Demo',
     url: `${DEMO_AUDIO_BASE}/ambient-stream.mp3`,
     cover: 'app.media.RecomMusic01'
   },
   {
     id: 'demo-ambient-002',
-    title: 'Demo Rain Texture',
+    title: '屋檐雨纹',
     singer: 'NatureSound Demo',
     url: `${DEMO_AUDIO_BASE}/rain-texture.mp3`,
     cover: 'app.media.RecomMusic02'
   },
   {
     id: 'demo-playlist-001',
-    title: 'Demo Playlist Item',
-    singer: 'Portfolio Placeholder',
+    title: '溪岸慢拍',
+    singer: 'Public Demo Source',
     url: `${DEMO_AUDIO_BASE}/playlist-item.mp3`,
     cover: 'app.media.RecomMusic03'
   },
   {
     id: 'demo-playlist-002',
-    title: 'Demo Local Playback',
-    singer: 'Portfolio Placeholder',
+    title: '风铃短章',
+    singer: 'Licensed Local Resource',
     url: `${DEMO_AUDIO_BASE}/local-playback.mp3`,
     cover: 'app.media.RecomMusic04'
   }

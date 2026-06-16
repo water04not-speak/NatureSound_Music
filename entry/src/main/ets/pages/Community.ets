@@ -5,6 +5,7 @@ import { UserState } from '../models/user'
 import { CommunityState } from '../models/community'
 import common from '@ohos.app.ability.common'
 import { getDefaultSongItems } from '../utils/MusicSeedData'
+import { loadLocalForumMomentSeeds, LocalForumCommentSeed, LocalForumMomentSeed } from '../utils/LocalPrivateForumConfig'
 
 /**
  * 歌曲项类型
@@ -38,6 +39,7 @@ export interface MomentListType {
   author: string
   avatar: string | Resource
   content: string
+  image?: string | Resource
   comment: number
   like: number
   liked: boolean
@@ -118,18 +120,18 @@ export struct Moment {
   private createSeedComments(seed: number): CommentItemType[] {
     const now = Date.now()
     const avatars: (string | Resource)[] = [
-      $r('app.media.moment_01'),
-      $r('app.media.moment_03'),
-      $r('app.media.moment_05'),
-      $r('app.media.moment_09')
+      $r('app.media.ic_moment'),
+      $r('app.media.ic_music'),
+      $r('app.media.ic_comment'),
+      $r('app.media.ic_find')
     ]
-    const names: string[] = ['我', '空城忆夢', 'AAA市场批发零售王姐', '淘宝客服', '我草莓招了', '深藏blue']
+    const names: string[] = ['声景记录员', 'ArkUI学习者', '非遗资料整理', '本地调试用户', '旋律观察员']
     const texts: string[] = [
-      '豪庭',
-      '如听仙乐耳暂明',
-      '歌好听到要用DeepSeek写发疯文案',
-      '死了都要听着这首歌下葬',
-      '这首歌只有没听过和无数遍'
+      '这个片段适合用来观察歌词同步和封面展示。',
+      '公开仓库只放安全示例，真实资源建议走本地授权配置。',
+      '声宴模块的地区组织方式很适合做 ArkTS 页面练习。',
+      '如果要补充素材，记得先确认音频、歌词和图片授权。',
+      '这个示例动态可以帮助验证点赞和评论状态。'
     ]
     const pick = <T>(arr: T[], i: number): T => arr[i % arr.length]
     const make = (idx: number): CommentItemType => {
@@ -163,12 +165,57 @@ export struct Moment {
     }
   }
 
+  private createCommentFromPrivate(seed: LocalForumCommentSeed, index: number, fallbackTime: number): CommentItemType {
+    return {
+      id: seed.id ?? `private-comment-${fallbackTime}-${index}`,
+      author: seed.author ?? '本地评论',
+      avatar: seed.avatar ?? 'app.media.ic_comment',
+      content: seed.content ?? '',
+      createdAt: seed.createdAt ?? fallbackTime - index * 10 * 60 * 1000,
+      like: seed.like ?? 0,
+      liked: false
+    }
+  }
+
+  private createMomentFromPrivate(seed: LocalForumMomentSeed, index: number): MomentListType {
+    const fallbackSong = this.songs[index % this.songs.length]
+    const matchedSong = seed.songId ? this.songs.find((song: SongItemType) => song.id === seed.songId) : undefined
+    const baseSong = matchedSong ?? fallbackSong
+    const songCover = seed.songCover ?? seed.cover ?? seed.song?.cover
+    const song: SongItemType = {
+      id: baseSong.id,
+      name: baseSong.name,
+      author: baseSong.author,
+      url: baseSong.url,
+      img: songCover && songCover.length > 0 ? songCover : baseSong.img
+    }
+    const image = seed.image ?? seed.imageUrl ?? ((seed.images && seed.images.length > 0) ? seed.images[0] : undefined)
+    const createdAt = seed.createdAt ?? Date.now() - index * 2 * 60 * 60 * 1000
+    const comments = (seed.comments ?? []).map((comment: LocalForumCommentSeed, commentIndex: number) => {
+      return this.createCommentFromPrivate(comment, commentIndex, createdAt)
+    })
+    return {
+      id: seed.id ?? `private-moment-${createdAt}-${index}`,
+      author: seed.author ?? '本地动态',
+      avatar: seed.avatar ?? 'app.media.ic_moment',
+      content: seed.content ?? '',
+      image,
+      comment: comments.length,
+      like: seed.like ?? 0,
+      liked: false,
+      createdAt,
+      song,
+      comments
+    }
+  }
+
   private cloneMoment(m: MomentListType): MomentListType {
     return {
       id: m.id,
       author: m.author,
       avatar: m.avatar,
       content: m.content,
+      image: m.image,
       comment: m.comment,
       like: m.like,
       liked: m.liked,
@@ -409,9 +456,10 @@ export struct Moment {
   aboutToAppear() {
     // 初始化社区状态（数据持久化）
     const abilityCtx = getContext(this) as common.UIAbilityContext
-    void this.communityState.initFromContext(abilityCtx).then(() => {
+    void this.communityState.initFromContext(abilityCtx).then(async () => {
+      const privateMoments = await loadLocalForumMomentSeeds(abilityCtx)
       // 初始化完成后，应用保存的状态数据
-      this.loadInitialData()
+      this.loadInitialData(privateMoments)
     }).catch((error: Error) => {
       console.error('[Moment] Failed to initialize community state:', error)
       // 即使初始化失败，也加载数据
@@ -419,26 +467,22 @@ export struct Moment {
     })
   }
 
-  private loadInitialData(): void {
-    // 使用 this.songs 组装全量数据
-    this.allMoments = [
-      this.createMoment('空城忆夢', $r("app.media.moment_01"), '所幸南风知我意，吹梦渡我到西洲。', 23382, this.songs[0], 0),
-      this.createMoment('AAA市场批发零售王姐', $r("app.media.moment_02"), '当你压力大快要崩溃时，别和别人去讲，也别觉得自己委屈，在夜深人静的时候，把心掏出来，缝缝补补，然后睡一觉，醒来又信心百倍。', 5482, this.songs[1], 1),
-      this.createMoment('淘宝客服', $r("app.media.moment_03"), '我爱你 心就特别软 平淡也温暖 无语也浪漫。', 4234, this.songs[2], 2),
-      this.createMoment('我草莓招了', $r("app.media.moment_04"), '炽烈的爱和稳定的情绪无法共存,此为两难。', 11545, this.songs[3], 3),
-      this.createMoment('深藏blue', $r("app.media.moment_05"), '以前觉得沟通很重要 后来发现共鸣才是绝杀 因为如果对方听不懂 你说的一切都是废话。', 2234, this.songs[4], 4),
-      this.createMoment('-骑老奶奶过马路-', $r("app.media.moment_06"), '回声 你在的地方太黑了 我带着灯笼来找你了。', 36297, this.songs[5], 5),
-      this.createMoment('Saber', $r("app.media.moment_07"), '其实，这世界本没有什么同性恋、异性恋、双性恋、姐弟恋、师生恋、神马恋等等。只是一个人爱上了另一个人，就这么简单。', 5482, this.songs[6], 6),
-      this.createMoment('185清纯男高', $r("app.media.moment_08"), '希望我们冰释前嫌 再也不相见。', 36448, this.songs[7], 7),
-      this.createMoment('我水饺了', $r("app.media.moment_09"), '“你凭什么用你那烂大街的爱情来写我们在外漂泊156年的紫荆花”', 5482, this.songs[8], 8),
-      this.createMoment('我是彭鱼晏', $r("app.media.moment_10"), '世界不让狗狗说话 是因为爱和忠诚要用行动表达。', 11482, this.songs[9], 9),
-      this.createMoment('斯卡哈の枪焰', $r("app.media.moment_11"), '我本以为柚子的锉刀就够惨了，没想到还有转笔刀。', 8526, this.songs[10], 10),
-      this.createMoment('WiFi信号暗杀者', $r("app.media.moment_12"), '很好听很有感染力的歌 我旁边跟我一起来的朋友瞬间就哭着跑出去了。', 5482, this.songs[11], 11),
-      this.createMoment('⁺ʚ王者重度依赖ɞ₊', $r("app.media.moment_13"), '昨晚好像又梦到了你 在烛火中 雾气湿漉漉的 氤氲好看。', 5482, this.songs[12], 12),
-      this.createMoment('源来凯始玺欢你', $r("app.media.moment_14"), '人间荒唐市侩，不如山中做怪。', 5482, this.songs[13], 13),
-      this.createMoment('史到淋头还想搅便', $r("app.media.moment_15"), '拜托 不随便谈恋爱的人真的很酷。', 5482, this.songs[14], 14),
-      this.createMoment('Echo', $r("app.media.moment_16"), '以前很讨厌妈妈拿手机拍我 讨厌她拿手机对准我 每次都让她不要拍我 她每次都尴尬一笑 说不拍不拍 最后发现 只有妈妈会举手机记录我。', 5482, this.songs[15], 15)
-    ]
+  private loadInitialData(privateMomentSeeds?: LocalForumMomentSeed[]): void {
+    if (privateMomentSeeds && privateMomentSeeds.length > 0) {
+      this.allMoments = privateMomentSeeds.map((seed: LocalForumMomentSeed, index: number) => {
+        return this.createMomentFromPrivate(seed, index)
+      })
+    } else {
+      // 使用 this.songs 组装公开安全示例数据
+      this.allMoments = [
+        this.createMoment('声景记录员', $r('app.media.ic_moment'), '今天整理了长三角声宴示例，江南丝竹片段很适合观察列表、封面和播放入口的联动。', 128, this.songs[0], 0),
+        this.createMoment('非遗资料整理', $r('app.media.ic_music'), '成渝地区的鼓点示例只保留公开安全字段，真实音频可以通过本地私有授权配置替换。', 96, this.songs[1], 1),
+        this.createMoment('ArkUI学习者', $r('app.media.ic_comment'), '互动广场现在可以用这些示例动态验证点赞、评论面板、最新和最热排序。', 82, this.songs[2], 2),
+        this.createMoment('旋律观察员', $r('app.media.ic_find'), '现代音乐板块使用城市雨声和电子风铃这样的原创示例名，不绑定任何真实商业歌曲。', 141, this.songs[3], 3),
+        this.createMoment('本地调试用户', $r('app.media.ic_music_feast'), '如果要演示完整播放效果，可以在本机添加 local_music.private.json，不需要提交到公开仓库。', 74, this.songs[4], 4),
+        this.createMoment('开源维护记录', $r('app.media.ic_setting'), '下一步可以补 ASSETS_LICENSES.md，把图片、图标和截图来源逐项说明清楚。', 63, this.songs[5], 5)
+      ]
+    }
 
     // 应用保存的状态数据（点赞、评论等）
     this.allMoments = this.communityState.applySavedStates(this.allMoments)
@@ -497,10 +541,26 @@ export struct Moment {
     }
   }
 
+  private resolveImageSource(src: string | Resource): string | Resource {
+    if (typeof src !== 'string') {
+      return src
+    }
+    if (src.startsWith('rawfile:')) {
+      return $rawfile(src.substring('rawfile:'.length))
+    }
+    if (src.startsWith('resource://RAWFILE/')) {
+      return $rawfile(src.substring('resource://RAWFILE/'.length))
+    }
+    if (src.startsWith('private/')) {
+      return $rawfile(src)
+    }
+    return src
+  }
+
   @Builder
   renderImageWithPlaceholder(src: string | Resource, width: number, height: number, borderRadius: number, borderConfig?: BorderConfig): void {
     if (borderConfig) {
-      Image(src)
+      Image(this.resolveImageSource(src))
         .width(width)
         .height(height)
         .borderRadius(borderRadius)
@@ -512,7 +572,7 @@ export struct Moment {
         })
         .border({ width: borderConfig.width, color: borderConfig.color })
     } else {
-      Image(src)
+      Image(this.resolveImageSource(src))
         .width(width)
         .height(height)
         .borderRadius(borderRadius)
@@ -523,6 +583,19 @@ export struct Moment {
           console.warn('[Moment] Image load failed:', src)
         })
     }
+  }
+
+  @Builder
+  renderMomentImage(src: string | Resource): void {
+    Image(this.resolveImageSource(src))
+      .width('100%')
+      .height(168)
+      .borderRadius(10)
+      .alt($r('app.media.ic_play'))
+      .objectFit(ImageFit.Cover)
+      .onError(() => {
+        console.warn('[Moment] Moment image load failed:', src)
+      })
   }
 
   @Builder
@@ -719,6 +792,10 @@ export struct Moment {
         .layoutWeight(1)
       }
       .alignItems(VerticalAlign.Top)
+
+      if (item.image) {
+        this.renderMomentImage(item.image)
+      }
 
       // 歌曲卡片
       this.renderSongCard(item.song)

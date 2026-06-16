@@ -29,6 +29,12 @@
 - 不接受包含侵权素材、真实商业音乐链接、完整商业歌词、未授权封面或歌手图片的 PR。
 - 本仓库的开源许可证适用于代码和文档；第三方素材必须以其各自授权为准。
 
+### 本地私有完整数据
+
+公开仓库默认使用安全 demo 数据。如需本地完整演示，可复制 `entry/src/main/resources/rawfile/` 下的 `local_music.private.example.json`、`local_heritage.private.example.json`、`local_forum.private.example.json`，分别改名为对应的 `.private.json` 文件并填入已获合法授权的音频、歌词、封面和动态内容。`.private.json` 文件已被 `.gitignore` 忽略，不应提交到 GitHub。
+
+论坛头像、动态图片和歌曲卡片封面可以放在 `entry/src/main/resources/rawfile/private/forum/` 与 `entry/src/main/resources/rawfile/private/covers/`，并在 private JSON 中使用 `private/forum/...` 或 `private/covers/...` 路径引用；这些目录同样不会提交到公开仓库。
+
 ## 项目亮点
 
 - 完整音乐播放链路：基于 `AVPlayer` 封装播放器桥接层，支持播放、暂停、切歌、进度拖动、播放模式、播放列表维护。

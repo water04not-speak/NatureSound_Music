@@ -1,0 +1,3 @@
+﻿entry/src/main/resources/rawfile/*.private.json
+entry/src/main/resources/rawfile/private/
+*.private.json
